@@ -36,7 +36,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       bodyStyle={{ padding: '16px 20px' }}
     >
       <Row justify="space-between" align="middle" gutter={[16, 12]}>
-        <Col xs={24} lg={15} xl={16}>
+        <Col xs={24} lg={14}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
             <Title
               level={4}
@@ -65,7 +65,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </Paragraph>
         </Col>
 
-        <Col xs={24} lg={9} xl={8}>
+        <Col xs={24} lg={10}>
           <div
             style={{
               display: 'flex',
@@ -79,14 +79,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <Select
               value={selectedPeriodId}
               onChange={onPeriodChange}
-              style={{ width: 165 }}
+              style={{ width: 180 }}
               size="middle"
-              placeholder="Chọn kỳ dữ liệu"
+              placeholder="Chọn kỳ"
             >
-              <Select.Option value="ALL">Tất cả các kỳ dữ liệu</Select.Option>
+              <Select.Option value="ALL">Tất cả các kỳ</Select.Option>
               {periods.map((p) => (
                 <Select.Option key={p.id} value={p.id}>
-                  {p.code} - {p.name.slice(0, 14)}...
+                  {p.code} - {p.name.slice(0, 12)}...
                 </Select.Option>
               ))}
             </Select>
