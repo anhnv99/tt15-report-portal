@@ -35,8 +35,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       }}
       bodyStyle={{ padding: '16px 20px' }}
     >
-      <Row justify="space-between" align="middle" gutter={[16, 16]}>
-        <Col xs={24} md={14}>
+      <Row justify="space-between" align="middle" gutter={[16, 12]}>
+        <Col xs={24} lg={13}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <Title level={4} style={{ color: '#FFFFFF', margin: 0, fontWeight: 700 }}>
               RegOne — Trung Tâm Vận Hành Báo Cáo
@@ -56,28 +56,33 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </Paragraph>
         </Col>
 
-        <Col xs={24} md={10} style={{ textAlign: 'right' }}>
-          <Space wrap size="middle">
-            {/* Period Filter */}
-            <div style={{ textAlign: 'left' }}>
-              <Text style={{ color: '#CBD5E1', fontSize: 11, display: 'block', marginBottom: 2 }}>
-                Kỳ Dữ Liệu:
-              </Text>
-              <Select
-                value={selectedPeriodId}
-                onChange={onPeriodChange}
-                style={{ width: 170 }}
-                size="middle"
-              >
-                <Select.Option value="ALL">Tất cả các kỳ</Select.Option>
-                {periods.map((p) => (
-                  <Select.Option key={p.id} value={p.id}>
-                    {p.code} - {p.name.slice(0, 15)}...
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
+        <Col xs={24} lg={11}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 8,
+              flexWrap: 'nowrap',
+            }}
+          >
+            {/* Period Filter Dropdown */}
+            <Select
+              value={selectedPeriodId}
+              onChange={onPeriodChange}
+              style={{ width: 180 }}
+              size="middle"
+              placeholder="Chọn kỳ dữ liệu"
+            >
+              <Select.Option value="ALL">Tất cả các kỳ dữ liệu</Select.Option>
+              {periods.map((p) => (
+                <Select.Option key={p.id} value={p.id}>
+                  {p.code} - {p.name.slice(0, 14)}...
+                </Select.Option>
+              ))}
+            </Select>
 
+            {/* Refresh Button */}
             <Tooltip title={`Cập nhật lúc ${lastUpdated}`}>
               <Button
                 icon={<ReloadOutlined spin={loading} />}
@@ -86,21 +91,28 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   background: 'rgba(255,255,255,0.1)',
                   borderColor: 'rgba(255,255,255,0.2)',
                   color: '#FFFFFF',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Làm mới
               </Button>
             </Tooltip>
 
+            {/* Upload Button */}
             <Button
               type="primary"
               icon={<CloudUploadOutlined />}
-              style={{ background: '#0284C7', borderColor: '#0284C7', fontWeight: 600 }}
+              style={{
+                background: '#0284C7',
+                borderColor: '#0284C7',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
               onClick={onNavigateImports}
             >
               Nạp Lô Mới
             </Button>
-          </Space>
+          </div>
         </Col>
       </Row>
     </Card>
