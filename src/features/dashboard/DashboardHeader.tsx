@@ -36,17 +36,26 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       bodyStyle={{ padding: '16px 20px' }}
     >
       <Row justify="space-between" align="middle" gutter={[16, 12]}>
-        <Col xs={24} lg={13}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <Title level={4} style={{ color: '#FFFFFF', margin: 0, fontWeight: 700 }}>
+        <Col xs={24} lg={15} xl={16}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+            <Title
+              level={4}
+              style={{
+                color: '#FFFFFF',
+                margin: 0,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                letterSpacing: '-0.2px',
+              }}
+            >
               RegOne — Trung Tâm Vận Hành Báo Cáo
             </Title>
-            <Tag color="#0284C7" style={{ fontWeight: 600, border: 'none' }}>
+            <Tag color="#0284C7" style={{ fontWeight: 600, border: 'none', margin: 0 }}>
               Phiên Bản 2.0
             </Tag>
             <Badge
               status="processing"
-              text={<span style={{ color: '#FBBF24', fontSize: 12 }}>War-Room Live</span>}
+              text={<span style={{ color: '#FBBF24', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>War-Room Live</span>}
             />
           </div>
           <Paragraph style={{ color: '#94A3B8', margin: 0, fontSize: 13, lineHeight: 1.5 }}>
@@ -56,7 +65,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </Paragraph>
         </Col>
 
-        <Col xs={24} lg={11}>
+        <Col xs={24} lg={9} xl={8}>
           <div
             style={{
               display: 'flex',
@@ -70,7 +79,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <Select
               value={selectedPeriodId}
               onChange={onPeriodChange}
-              style={{ width: 180 }}
+              style={{ width: 165 }}
               size="middle"
               placeholder="Chọn kỳ dữ liệu"
             >
