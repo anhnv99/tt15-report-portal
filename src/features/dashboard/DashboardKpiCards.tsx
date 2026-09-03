@@ -46,10 +46,11 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
   const ruleErrorCount = recentValidationErrors || pendingStats.failedAggs.length || 0;
   const hasRuleErrors = ruleErrorCount > 0;
 
-  // Nền trắng tinh khôi, viền chuẩn mực đồng bộ 100%
-  const cardBase: React.CSSProperties = {
+  // 1 MÀU VIỀN DUY NHẤT THEO MÀU CHỦ ĐẠO REGONE BLUE (#1E63FF) CHO TẤT CẢ 6 THẺ
+  const uniformCardStyle: React.CSSProperties = {
     borderRadius: 8,
     border: '1px solid #E2E8F0',
+    borderTop: '3px solid #1E63FF',
     background: '#FFFFFF',
     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
     height: '100%',
@@ -58,13 +59,9 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
 
   return (
     <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-      {/* Card 1: Lô Chờ Duyệt - Điểm viền xanh chủ đạo */}
+      {/* Card 1: Lô Chờ Duyệt */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{ ...cardBase, borderTop: '2.5px solid #1E63FF' }}
-          onClick={onNavigateImports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateImports}>
           <Statistic
             title={
               <Space size={6}>
@@ -84,17 +81,13 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 2: Báo Cáo Nháp - Điểm viền sky chủ đạo */}
+      {/* Card 2: Báo Cáo Nháp */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{ ...cardBase, borderTop: '2.5px solid #0284C7' }}
-          onClick={onNavigateReports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateReports}>
           <Statistic
             title={
               <Space size={6}>
-                <AuditOutlined style={{ color: '#0284C7' }} />
+                <AuditOutlined style={{ color: '#1E63FF' }} />
                 <Text strong style={{ fontSize: 12, color: '#475569' }}>
                   Báo Cáo Nháp
                 </Text>
@@ -110,20 +103,13 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 3: Lô Có Dòng Lỗi - Điểm viền đỏ cảnh báo (khi có lỗi) */}
+      {/* Card 3: Lô Có Dòng Lỗi - Chỉ màu chữ cảnh báo đỏ */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBase,
-            borderTop: hasErrors ? '2.5px solid #EF4444' : '2.5px solid #E2E8F0',
-          }}
-          onClick={onNavigateImports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateImports}>
           <Statistic
             title={
               <Space size={6}>
-                <WarningOutlined style={{ color: hasErrors ? '#EF4444' : '#64748B' }} />
+                <WarningOutlined style={{ color: hasErrors ? '#EF4444' : '#1E63FF' }} />
                 <Text strong style={{ fontSize: 12, color: hasErrors ? '#DC2626' : '#475569' }}>
                   Lô Có Dòng Lỗi
                 </Text>
@@ -145,20 +131,13 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 4: Bị Từ Chối - Điểm viền cam cảnh báo (khi có mục bị từ chối) */}
+      {/* Card 4: Bị Từ Chối - Chỉ màu chữ cảnh báo cam */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBase,
-            borderTop: hasRejected ? '2.5px solid #F59E0B' : '2.5px solid #E2E8F0',
-          }}
-          onClick={onNavigateImports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateImports}>
           <Statistic
             title={
               <Space size={6}>
-                <CloseCircleOutlined style={{ color: hasRejected ? '#F59E0B' : '#64748B' }} />
+                <CloseCircleOutlined style={{ color: hasRejected ? '#F59E0B' : '#1E63FF' }} />
                 <Text strong style={{ fontSize: 12, color: hasRejected ? '#D97706' : '#475569' }}>
                   Bị Từ Chối
                 </Text>
@@ -176,20 +155,13 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 5: Cảnh Báo Rules - Điểm viền cam khi có lỗi logic */}
+      {/* Card 5: Cảnh Báo Rules */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBase,
-            borderTop: hasRuleErrors ? '2.5px solid #F59E0B' : '2.5px solid #E2E8F0',
-          }}
-          onClick={onNavigateReports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateReports}>
           <Statistic
             title={
               <Space size={6}>
-                <ExclamationCircleOutlined style={{ color: hasRuleErrors ? '#F59E0B' : '#64748B' }} />
+                <ExclamationCircleOutlined style={{ color: hasRuleErrors ? '#F59E0B' : '#1E63FF' }} />
                 <Text strong style={{ fontSize: 12, color: '#475569' }}>
                   Cảnh Báo Rules
                 </Text>
@@ -205,16 +177,13 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 6: Chất Lượng Dữ Liệu - Điểm viền xanh lá */}
+      {/* Card 6: Chất Lượng Dữ Liệu */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{ ...cardBase, borderTop: '2.5px solid #10B981' }}
-        >
+        <Card hoverable style={uniformCardStyle}>
           <Statistic
             title={
               <Space size={6}>
-                <CheckCircleOutlined style={{ color: '#10B981' }} />
+                <CheckCircleOutlined style={{ color: '#1E63FF' }} />
                 <Text strong style={{ fontSize: 12, color: '#475569', whiteSpace: 'nowrap' }}>
                   Chất Lượng Dữ Liệu
                 </Text>
@@ -228,7 +197,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
             <Progress
               percent={pendingStats.qualityRate}
               size="small"
-              strokeColor="#10B981"
+              strokeColor="#1E63FF"
               showInfo={false}
             />
           </div>
