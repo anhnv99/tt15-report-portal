@@ -59,12 +59,27 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
     {
       title: 'Tên File Báo Cáo Chuẩn QĐ573',
       key: 'fileName',
+      width: 380,
       render: (_, r) => {
         const autoName = r.fileName || getStandardReportFileName(r.reportCode, r.reportingDate, r.versionNumber, '79301001', 'json');
         return (
-          <Space>
-            <FileTextOutlined style={{ color: '#003B95' }} />
-            <Text strong copyable={{ text: autoName }}>{autoName}</Text>
+          <Space style={{ whiteSpace: 'nowrap' }}>
+            <FileTextOutlined style={{ color: '#003B95', fontSize: 16 }} />
+            <Text
+              strong
+              copyable={{ text: autoName }}
+              style={{
+                fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                fontSize: 13,
+                color: '#0F172A',
+                background: '#F1F5F9',
+                padding: '2px 8px',
+                borderRadius: 4,
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              {autoName}
+            </Text>
           </Space>
         );
       },
@@ -86,7 +101,7 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
       title: 'Người Nộp / Tạo',
       dataIndex: 'submittedBy',
       key: 'submittedBy',
-      width: 150,
+      width: 160,
       render: (u) => u || 'Hệ thống tự động',
     },
     {
@@ -99,7 +114,8 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
     {
       title: 'Thao Tác Nghiệp Vụ',
       key: 'actions',
-      width: 320,
+      width: 330,
+      fixed: 'right' as const,
       render: (_, r) => (
         <Space size="small" wrap>
           {r.status === 'DRAFT' && (
@@ -164,6 +180,7 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
       rowKey="id"
       loading={loading}
       pagination={{ pageSize: 10 }}
+      scroll={{ x: 1400 }}
     />
   );
 };

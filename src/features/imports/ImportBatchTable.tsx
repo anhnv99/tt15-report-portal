@@ -87,6 +87,7 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       title: 'Tên Tệp Dữ Liệu',
       dataIndex: 'fileName',
       key: 'fileName',
+      width: 280,
       render: (f, r) => (
         <div>
           <Space>
@@ -177,7 +178,8 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
     {
       title: 'Thao Tác Nghiệp Vụ',
       key: 'actions',
-      width: 280,
+      width: 320,
+      fixed: 'right' as const,
       render: (_, r) => (
         <Space size="small" wrap>
           {r.status === 'UPLOADED' && (
@@ -290,6 +292,7 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1400 }}
         rowSelection={{
           selectedRowKeys,
           onChange: setSelectedRowKeys,
