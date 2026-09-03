@@ -2,11 +2,26 @@ import axios from 'axios';
 import { message } from 'antd';
 import type { ApiResponse } from '@/types';
 
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    const customUrl = localStorage.getItem('tt15_api_base_url');
+    if (customUrl && customUrl.trim()) {
+      return customUrl.trim();
+    }
+  }
+  return import.meta.env.VITE_API_BASE_URL || '/api';
+};
+
 export const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+apiClient.interceptors.request.use((config) => {
+  config.baseURL = getBaseURL();
+  return config;
 });
 
 apiClient.interceptors.response.use(
