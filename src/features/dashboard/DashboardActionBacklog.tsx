@@ -110,15 +110,25 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         render: (f, r) => f || r.fileName || '-',
                       },
                       {
-                        title: 'Số Dòng Hợp Lệ',
+                        title: 'Dòng Hợp Lệ Chờ Duyệt',
                         dataIndex: 'validRows',
                         key: 'validRows',
-                        width: 150,
-                        render: (v, r) => (
-                          <Tag color="success">
-                            <b>{v ?? r.totalRows ?? 0}</b> dòng hợp lệ
-                          </Tag>
-                        ),
+                        width: 170,
+                        render: (v, r) => {
+                          const valid = typeof v === 'number' ? v : (r.validRows ?? 0);
+                          if (valid > 0) {
+                            return (
+                              <Tag color="success">
+                                <b>{valid}</b> dòng hợp lệ
+                              </Tag>
+                            );
+                          }
+                          return (
+                            <Tag color="warning">
+                              Chưa có dòng hợp lệ
+                            </Tag>
+                          );
+                        },
                       },
                       {
                         title: 'Thời Gian Nạp',
@@ -280,12 +290,16 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                       {
                         title: 'Dòng Lỗi Cần Sửa',
                         key: 'errorRows',
-                        width: 140,
-                        render: (_, r) => (
-                          <Tag color="error">
-                            <b>{r.errorRows || 0}</b> / {r.totalRows || 0} dòng
-                          </Tag>
-                        ),
+                        width: 150,
+                        render: (_, r) => {
+                          const err = r.errorRows || 0;
+                          const total = r.totalRows || (err > 0 ? err + (r.validRows || 0) : 0);
+                          return (
+                            <Tag color="error">
+                              <b>{err}</b> {total > 0 ? `/ ${total} dòng` : 'dòng lỗi'}
+                            </Tag>
+                          );
+                        },
                       },
                       {
                         title: 'Lý Do / Ghi Chú',
