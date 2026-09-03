@@ -46,6 +46,7 @@ export const ValidationResultsDrawer: React.FC<ValidationResultsDrawerProps> = (
       width: 100,
       render: (s: string) => {
         const mapColor: Record<string, string> = {
+          CRITICAL: 'magenta',
           ERROR: 'error',
           WARNING: 'warning',
           INFO: 'blue',
