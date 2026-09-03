@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/tt15-report-portal/' : '/',
+  base: process.env.VERCEL ? '/' : (process.env.GITHUB_ACTIONS ? '/tt15-report-portal/' : '/'),
   plugins: [react()],
   resolve: {
     alias: {
