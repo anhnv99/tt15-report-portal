@@ -12,8 +12,18 @@ const getBaseURL = () => {
   return import.meta.env.VITE_API_BASE_URL || '/api';
 };
 
+export const getActiveBaseURL = () => getBaseURL();
+export const setCustomBaseURL = (url: string) => {
+  if (!url || !url.trim()) {
+    localStorage.removeItem('tt15_api_base_url');
+  } else {
+    localStorage.setItem('tt15_api_base_url', url.trim());
+  }
+};
+
 export const apiClient = axios.create({
   baseURL: getBaseURL(),
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
