@@ -36,6 +36,11 @@ jobs:
       - name: Copy index.html to 404.html for SPA routing
         run: cp dist/index.html dist/404.html
 
+      - name: Prevent Vercel from failing on gh-pages branch
+        run: |
+          echo '{"name":"gh-pages-dist","private":true,"scripts":{"build":"echo dist already built"}}' > dist/package.json
+          echo '{"framework":null,"buildCommand":"echo dist already built","outputDirectory":"."}' > dist/vercel.json
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
