@@ -11,7 +11,7 @@ import type {
 export const catalogApi = {
   // Data Periods
   getDataPeriods: () =>
-    apiClient.get<any, DataPeriod[]>('/catalog/data-periods'),
+    apiClient.get<any, DataPeriod[]>('/catalog/data-periods/options'),
 
   getDataPeriodByCode: (code: string) =>
     apiClient.get<any, DataPeriod>(`/catalog/data-periods/${code}`),

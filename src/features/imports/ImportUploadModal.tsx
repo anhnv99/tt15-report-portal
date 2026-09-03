@@ -116,6 +116,8 @@ export const ImportUploadModal: React.FC<ImportUploadModalProps> = ({
                   value={uploadPeriodId}
                   onChange={onPeriodChange}
                   placeholder="Chọn kỳ dữ liệu"
+                  showSearch
+                  optionFilterProp="children"
                 >
                   {periods.map((p) => (
                     <Select.Option key={p.id} value={p.id}>
