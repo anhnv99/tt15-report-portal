@@ -113,10 +113,10 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         title: 'Số Dòng Hợp Lệ',
                         dataIndex: 'validRows',
                         key: 'validRows',
-                        width: 140,
-                        render: (v) => (
+                        width: 150,
+                        render: (v, r) => (
                           <Tag color="success">
-                            <b>{v}</b> dòng sạch
+                            <b>{v ?? r.totalRows ?? 0}</b> dòng hợp lệ
                           </Tag>
                         ),
                       },
