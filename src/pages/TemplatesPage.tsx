@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Typography, Space, Segmented, Button, message } from 'antd';
-import { TableOutlined, CodeOutlined, SyncOutlined } from '@ant-design/icons';
+import { TableOutlined, CodeOutlined, SyncOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { catalogApi } from '@/api/catalog.api';
 import type { ReportTemplate, ReportTemplateField, ReportTemplateRule } from '@/types';
 import { TemplateListView } from '@/features/templates/TemplateListView';
 import { TemplateJsonPreview } from '@/features/templates/TemplateJsonPreview';
 import { TemplateDetailDrawer } from '@/features/templates/TemplateDetailDrawer';
 import { TemplateRuleModal } from '@/features/templates/TemplateRuleModal';
+import { CreateTemplateModal } from '@/features/templates/CreateTemplateModal';
 
 const { Title, Text } = Typography;
 
@@ -21,6 +22,10 @@ export const TemplatesPage: React.FC = () => {
   const [previewTemplateCode, setPreviewTemplateCode] = useState<string>('D10');
   const [previewFields, setPreviewFields] = useState<ReportTemplateField[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Create Template Modal State
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
 
   // Detail Drawer State
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -138,12 +143,40 @@ export const TemplatesPage: React.FC = () => {
     loadTemplateDetail(selectedTemplate.reportCode);
   };
 
+  // Template Actions
+  const handleCreateTemplate = async (values: any) => {
+    try {
+      setCreateLoading(true);
+      await catalogApi.createReportTemplate(values);
+      message.success(`Đã tạo thành công biểu mẫu báo cáo ${values.reportCode}!`);
+      setCreateModalOpen(false);
+      loadTemplates();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể tạo biểu mẫu báo cáo');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleToggleActive = async (reportCode: string) => {
+    try {
+      const res = await catalogApi.toggleTemplateActive(reportCode);
+      const isNowActive = res?.isActive !== false;
+      message.success(`Đã ${isNowActive ? 'kích hoạt' : 'tạm dừng'} biểu mẫu ${reportCode}!`);
+      loadTemplates();
+    } catch (err) {
+      console.error(err);
+      message.error('Không thể cập nhật trạng thái biểu mẫu');
+    }
+  };
+
   return (
     <div>
       {/* Header Bar */}
       <Card style={{ marginBottom: 16, borderRadius: 8 }}>
         <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col xs={24} md={14}>
+          <Col xs={24} md={12}>
             <Title level={4} style={{ margin: 0, color: '#002B66' }}>
               Cấu Hình Biểu Mẫu Báo Cáo & Bộ Quy Tắc Đối Soát (Rule Engine)
             </Title>
@@ -151,7 +184,7 @@ export const TemplatesPage: React.FC = () => {
               Quản lý danh mục 13 biểu mẫu chính thức theo QĐ 573/NHNN & TT15, quy cách đóng gói JSON Phụ lục II và bộ quy tắc kiểm tra dữ liệu.
             </Text>
           </Col>
-          <Col xs={24} md={10} style={{ textAlign: 'right' }}>
+          <Col xs={24} md={12} style={{ textAlign: 'right' }}>
             <Space wrap>
               <Segmented
                 value={viewMode}
@@ -177,6 +210,14 @@ export const TemplatesPage: React.FC = () => {
                   },
                 ]}
               />
+              <Button
+                type="primary"
+                icon={<PlusCircleOutlined />}
+                style={{ background: '#003B95' }}
+                onClick={() => setCreateModalOpen(true)}
+              >
+                Tạo Mới Biểu Mẫu
+              </Button>
               <Button icon={<SyncOutlined />} onClick={loadTemplates}>
                 Làm mới
               </Button>
@@ -191,6 +232,7 @@ export const TemplatesPage: React.FC = () => {
           templates={templates}
           loading={loading}
           onOpenDetail={handleOpenDetail}
+          onToggleActive={handleToggleActive}
           onViewJson={(code) => {
             setPreviewTemplateCode(code);
             setViewMode('json-preview');
@@ -240,6 +282,14 @@ export const TemplatesPage: React.FC = () => {
           setEditingRule(null);
         }}
         onSubmit={handleSaveRule}
+      />
+
+      {/* Create New Template Modal */}
+      <CreateTemplateModal
+        open={createModalOpen}
+        onCancel={() => setCreateModalOpen(false)}
+        onSubmit={handleCreateTemplate}
+        loading={createLoading}
       />
     </div>
   );

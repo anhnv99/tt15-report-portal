@@ -72,6 +72,9 @@ export const catalogApi = {
   deleteReportTemplate: (reportCode: string) =>
     apiClient.delete(`/report-templates/${reportCode}`),
 
+  toggleTemplateActive: (reportCode: string) =>
+    apiClient.patch<any, ReportTemplate>(`/report-templates/${reportCode}/toggle-active`),
+
   // Template Fields
   getTemplateFields: (reportCode: string) =>
     apiClient.get<any, ReportTemplateField[]>(`/report-templates/${reportCode}/fields`),

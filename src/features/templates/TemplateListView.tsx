@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Table, Tag, Button, Space, Typography } from 'antd';
+import { Card, Table, Tag, Button, Space, Typography, Switch } from 'antd';
 import { SettingOutlined, CodeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { ReportTemplate } from '@/types';
@@ -11,6 +11,7 @@ interface TemplateListViewProps {
   loading: boolean;
   onOpenDetail: (tpl: ReportTemplate) => void;
   onViewJson: (reportCode: string) => void;
+  onToggleActive: (reportCode: string) => void;
 }
 
 export const TemplateListView: React.FC<TemplateListViewProps> = ({
@@ -18,6 +19,7 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
   loading,
   onOpenDetail,
   onViewJson,
+  onToggleActive,
 }) => {
   const columns: ColumnsType<ReportTemplate> = [
     {
@@ -74,9 +76,30 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
       render: (p) => <Text code>{p || '-'}</Text>,
     },
     {
+      title: 'Trạng Thái',
+      key: 'isActive',
+      width: 160,
+      render: (_, r) => {
+        const active = r.isActive !== false;
+        return (
+          <Space>
+            <Switch
+              size="small"
+              checked={active}
+              onChange={() => onToggleActive(r.reportCode)}
+            />
+            <Tag color={active ? 'success' : 'default'}>
+              {active ? 'Hoạt động' : 'Tạm dừng'}
+            </Tag>
+          </Space>
+        );
+      },
+    },
+    {
       title: 'Thao Tác',
       key: 'actions',
       width: 220,
+      fixed: 'right' as const,
       render: (_, r) => (
         <Space size="small">
           <Button
@@ -108,6 +131,7 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
         rowKey="reportCode"
         loading={loading}
         pagination={{ pageSize: 15 }}
+        scroll={{ x: 1100 }}
       />
     </Card>
   );

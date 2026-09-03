@@ -64,6 +64,7 @@ export interface ReportTemplate {
   periodTypeCode?: string;
   dataPeriodTypeId?: number;
   active?: boolean;
+  isActive?: boolean;
   version?: number;
 }
 
