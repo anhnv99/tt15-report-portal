@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 90" width="380" height="90">
+  <!-- KT Icon -->
+  <rect x="5" y="8" width="74" height="74" rx="16" fill="#0047A5"/>
+  <text x="42" y="61" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="-1">KT</text>
+  
+  <!-- Text Brand -->
+  <text x="96" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="800" fill="#FFFFFF" letter-spacing="0.5">KT TECHNOLOGY</text>
+  <text x="96" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700" fill="#E2E8F0" letter-spacing="1.2">COMPANY LTD</text>
+  <text x="96" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" fill="#93C5FD" letter-spacing="1.5">COMMITTED TO VALUE</text>
+</svg>
