@@ -46,7 +46,8 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
   const ruleErrorCount = recentValidationErrors || pendingStats.failedAggs.length || 0;
   const hasRuleErrors = ruleErrorCount > 0;
 
-  const cardBaseStyle: React.CSSProperties = {
+  // Đồng bộ 100% toàn bộ nền và khung của tất cả các Card
+  const uniformCardStyle: React.CSSProperties = {
     borderRadius: 8,
     border: '1px solid #E2E8F0',
     background: '#FFFFFF',
@@ -57,21 +58,16 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
 
   return (
     <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-      {/* Card 1: Lô Chờ Phê Duyệt (Pending Batches) - Màu chủ đạo */}
+      {/* Card 1: Lô Chờ Duyệt */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBaseStyle,
-            borderTop: pendingStats.pendingBatchesCount > 0 ? '3px solid #1E63FF' : '1px solid #E2E8F0',
-          }}
-          onClick={onNavigateImports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateImports}>
           <Statistic
             title={
-              <Space>
+              <Space size={6}>
                 <ClockCircleOutlined style={{ color: '#1E63FF' }} />
-                <Text strong style={{ fontSize: 12, color: '#475569' }}>Lô Chờ Duyệt</Text>
+                <Text strong style={{ fontSize: 12, color: '#475569' }}>
+                  Lô Chờ Duyệt
+                </Text>
               </Space>
             }
             value={pendingStats.pendingBatchesCount}
@@ -84,21 +80,16 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 2: Báo Cáo Nháp Chờ Ký Duyệt (Draft Reports) - Màu chủ đạo */}
+      {/* Card 2: Báo Cáo Nháp */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBaseStyle,
-            borderTop: pendingStats.draftReports.length > 0 ? '3px solid #0284C7' : '1px solid #E2E8F0',
-          }}
-          onClick={onNavigateReports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateReports}>
           <Statistic
             title={
-              <Space>
-                <AuditOutlined style={{ color: '#0284C7' }} />
-                <Text strong style={{ fontSize: 12, color: '#475569' }}>Báo Cáo Nháp</Text>
+              <Space size={6}>
+                <AuditOutlined style={{ color: '#1E63FF' }} />
+                <Text strong style={{ fontSize: 12, color: '#475569' }}>
+                  Báo Cáo Nháp
+                </Text>
               </Space>
             }
             value={pendingStats.draftReports.length}
@@ -111,20 +102,12 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 3: Lô Có Dòng Lỗi (Data Error Batches) - ĐIỂM NHẤN CẢNH BÁO */}
+      {/* Card 3: Lô Có Dòng Lỗi - Chỉ khác màu chữ / icon cảnh báo đỏ */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBaseStyle,
-            borderTop: hasErrors ? '3px solid #EF4444' : '1px solid #E2E8F0',
-            borderColor: hasErrors ? '#FECACA' : '#E2E8F0',
-          }}
-          onClick={onNavigateImports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateImports}>
           <Statistic
             title={
-              <Space>
+              <Space size={6}>
                 <WarningOutlined style={{ color: hasErrors ? '#EF4444' : '#64748B' }} />
                 <Text strong style={{ fontSize: 12, color: hasErrors ? '#DC2626' : '#475569' }}>
                   Lô Có Dòng Lỗi
@@ -135,7 +118,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
             valueStyle={{ color: hasErrors ? '#DC2626' : '#0F172A', fontWeight: 700, fontSize: 24 }}
             suffix={<span style={{ fontSize: 12, color: hasErrors ? '#DC2626' : '#64748B', fontWeight: 400 }}>lô</span>}
           />
-          <div style={{ marginTop: 6, fontSize: 11, color: hasErrors ? '#B91C1C' : '#64748B' }}>
+          <div style={{ marginTop: 6, fontSize: 11, color: hasErrors ? '#DC2626' : '#64748B' }}>
             {hasErrors ? (
               <>
                 Tổng <b style={{ color: '#DC2626' }}>{pendingStats.totalErrorRows}</b> dòng cần sửa
@@ -147,75 +130,62 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
         </Card>
       </Col>
 
-      {/* Card 4: Lô & Báo Cáo Bị Từ Chối (Rejected Items) - ĐIỂM NHẤN CẢNH BÁO NẾU CÓ */}
+      {/* Card 4: Bị Từ Chối - Chỉ khác màu chữ / icon cảnh báo cam */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBaseStyle,
-            borderTop: hasRejected ? '3px solid #F59E0B' : '1px solid #E2E8F0',
-            borderColor: hasRejected ? '#FED7AA' : '#E2E8F0',
-          }}
-          onClick={onNavigateImports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateImports}>
           <Statistic
             title={
-              <Space>
+              <Space size={6}>
                 <CloseCircleOutlined style={{ color: hasRejected ? '#F59E0B' : '#64748B' }} />
-                <Text strong style={{ fontSize: 12, color: hasRejected ? '#B45309' : '#475569' }}>
+                <Text strong style={{ fontSize: 12, color: hasRejected ? '#D97706' : '#475569' }}>
                   Bị Từ Chối
                 </Text>
               </Space>
             }
             value={rejectedCount}
-            valueStyle={{ color: hasRejected ? '#B45309' : '#0F172A', fontWeight: 700, fontSize: 24 }}
-            suffix={<span style={{ fontSize: 12, color: hasRejected ? '#B45309' : '#64748B', fontWeight: 400 }}>mục</span>}
+            valueStyle={{ color: hasRejected ? '#D97706' : '#0F172A', fontWeight: 700, fontSize: 24 }}
+            suffix={<span style={{ fontSize: 12, color: hasRejected ? '#D97706' : '#64748B', fontWeight: 400 }}>mục</span>}
           />
-          <div style={{ marginTop: 6, fontSize: 11, color: hasRejected ? '#B45309' : '#64748B' }}>
+          <div style={{ marginTop: 6, fontSize: 11, color: hasRejected ? '#D97706' : '#64748B' }}>
             {hasRejected
               ? `${pendingStats.rejectedBatches.length} lô, ${pendingStats.rejectedReports.length} báo cáo`
-              : 'Không có mục bị từ chối'}
+              : '0 lô, 0 báo cáo'}
           </div>
         </Card>
       </Col>
 
-      {/* Card 5: Cảnh Báo Quy Tắc Đối Soát (Rule Violations) - Màu chủ đạo */}
+      {/* Card 5: Cảnh Báo Rules - Chỉ khác màu chữ / icon cảnh báo khi có lỗi */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card
-          hoverable
-          style={{
-            ...cardBaseStyle,
-            borderTop: hasRuleErrors ? '3px solid #F59E0B' : '1px solid #E2E8F0',
-          }}
-          onClick={onNavigateReports}
-        >
+        <Card hoverable style={uniformCardStyle} onClick={onNavigateReports}>
           <Statistic
             title={
-              <Space>
+              <Space size={6}>
                 <ExclamationCircleOutlined style={{ color: hasRuleErrors ? '#F59E0B' : '#64748B' }} />
-                <Text strong style={{ fontSize: 12, color: hasRuleErrors ? '#B45309' : '#475569' }}>
+                <Text strong style={{ fontSize: 12, color: '#475569' }}>
                   Cảnh Báo Rules
                 </Text>
               </Space>
             }
             value={ruleErrorCount}
-            valueStyle={{ color: hasRuleErrors ? '#B45309' : '#0F172A', fontWeight: 700, fontSize: 24 }}
+            valueStyle={{ color: hasRuleErrors ? '#D97706' : '#0F172A', fontWeight: 700, fontSize: 24 }}
             suffix={<span style={{ fontSize: 12, color: '#64748B', fontWeight: 400 }}>lỗi</span>}
           />
-          <div style={{ marginTop: 6, fontSize: 11, color: '#64748B' }}>
+          <div style={{ marginTop: 6, fontSize: 11, color: hasRuleErrors ? '#D97706' : '#64748B' }}>
             {hasRuleErrors ? 'Vi phạm logic đối soát' : 'Quy tắc kiểm tra hợp lệ'}
           </div>
         </Card>
       </Col>
 
-      {/* Card 6: Chất Lượng Dữ Liệu (%) - Màu chủ đạo */}
+      {/* Card 6: Chất Lượng Dữ Liệu */}
       <Col xs={24} sm={12} md={8} lg={4}>
-        <Card hoverable style={cardBaseStyle}>
+        <Card hoverable style={uniformCardStyle}>
           <Statistic
             title={
-              <Space>
+              <Space size={6}>
                 <CheckCircleOutlined style={{ color: '#0284C7' }} />
-                <Text strong style={{ fontSize: 12, color: '#475569' }}>Chất Lượng Dữ Liệu</Text>
+                <Text strong style={{ fontSize: 12, color: '#475569', whiteSpace: 'nowrap' }}>
+                  Chất Lượng Dữ Liệu
+                </Text>
               </Space>
             }
             value={pendingStats.qualityRate}
