@@ -1,6 +1,7 @@
 import React from 'react';
-import { Table, Tag, Button, Space, Typography, Popconfirm, Row, Col } from 'antd';
+import { Table, Tag, Button, Space, Typography, Popconfirm, Row, Col, Tooltip } from 'antd';
 import { PlusOutlined, ThunderboltOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
+import { Lock, Unlock } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { DataPeriod } from '@/types';
 
@@ -39,8 +40,25 @@ export const DataPeriodsTab: React.FC<DataPeriodsTabProps> = ({
       title: 'Loại Kỳ',
       dataIndex: 'periodType',
       key: 'periodType',
-      width: 140,
-      render: (t) => <Tag color="blue">{t}</Tag>,
+      width: 170,
+      render: (t, r) => {
+        let val = t || (r as any).periodTypeName;
+        if (!val) {
+          if (r.code.includes('_3D') || r.code.includes('3NGAY')) val = '3 Ngày';
+          else if (r.code.includes('_15D') || r.code.includes('15NGAY')) val = 'Bán nguyệt (15 ngày)';
+          else if (r.code.includes('EVENT')) val = 'Theo sự kiện';
+          else val = 'Hàng tháng';
+        }
+        const colorMap: Record<string, string> = {
+          '3 Ngày': 'cyan',
+          'Theo sự kiện': 'purple',
+          'Bán nguyệt (15 ngày)': 'orange',
+          'Hàng tháng': 'green',
+          'Hàng năm': 'gold',
+          'Hàng quý': 'blue',
+        };
+        return <Tag color={colorMap[val] || 'blue'}>{val}</Tag>;
+      },
     },
     {
       title: 'Từ Ngày',
@@ -75,28 +93,30 @@ export const DataPeriodsTab: React.FC<DataPeriodsTabProps> = ({
     {
       title: 'Thao Tác',
       key: 'actions',
-      width: 140,
+      width: 100,
       render: (_, r) => (
-        <Popconfirm
-          title={r.closed ? 'Mở lại kỳ dữ liệu này?' : 'Đóng sổ kỳ dữ liệu này?'}
-          description={
-            r.closed
-              ? 'Mở lại kỳ sẽ cho phép nạp thêm dữ liệu và tổng hợp lại báo cáo.'
-              : 'Đóng kỳ sẽ khóa không cho phép nạp đè dữ liệu.'
-          }
-          onConfirm={() => onToggleClose(r)}
-          okText={r.closed ? 'Mở Kỳ' : 'Đóng Sổ'}
-          cancelText="Hủy"
-        >
-          <Button
-            size="small"
-            type={r.closed ? 'default' : 'primary'}
-            danger={!r.closed}
-            icon={r.closed ? <UnlockOutlined /> : <LockOutlined />}
+        <Tooltip title={r.closed ? 'Mở lại sổ kỳ dữ liệu này' : 'Khóa sổ (Đóng kỳ) dữ liệu này'}>
+          <Popconfirm
+            title={r.closed ? 'Mở lại kỳ dữ liệu này?' : 'Đóng sổ kỳ dữ liệu này?'}
+            description={
+              r.closed
+                ? 'Mở lại kỳ sẽ cho phép nạp thêm dữ liệu và tổng hợp lại báo cáo.'
+                : 'Đóng kỳ sẽ khóa không cho phép nạp đè dữ liệu.'
+            }
+            onConfirm={() => onToggleClose(r)}
+            okText={r.closed ? 'Mở Kỳ' : 'Đóng Sổ'}
+            cancelText="Hủy"
           >
-            {r.closed ? 'Mở Kỳ' : 'Đóng Sổ'}
-          </Button>
-        </Popconfirm>
+            <Button
+              shape="circle"
+              size="small"
+              type={r.closed ? 'default' : 'primary'}
+              danger={!r.closed}
+              icon={r.closed ? <Unlock size={14} /> : <Lock size={14} />}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            />
+          </Popconfirm>
+        </Tooltip>
       ),
     },
   ];

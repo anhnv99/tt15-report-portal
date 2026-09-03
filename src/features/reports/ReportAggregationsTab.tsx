@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Tag, Button, Space, Typography, Popconfirm, Row, Col } from 'antd';
+import { Table, Tag, Button, Space, Typography, Popconfirm, Row, Col, Tooltip } from 'antd';
 import {
   PlayCircleOutlined,
   EyeOutlined,
@@ -7,6 +7,7 @@ import {
   ThunderboltOutlined,
   ApartmentOutlined,
 } from '@ant-design/icons';
+import { ShieldCheck, Eye, GitBranch } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { ReportAggregation } from '@/types';
 
@@ -96,43 +97,48 @@ export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
       render: (d) => (d ? new Date(d).toLocaleString('vi-VN') : '-'),
     },
     {
-      title: 'Thao Tác Nghiệp Vụ',
+      title: 'Thao Tác',
       key: 'actions',
-      width: 320,
+      width: 140,
       render: (_, r) => (
-        <Space size="small" wrap>
-          <Popconfirm
-            title="Thực thi kiểm tra Validation Rules?"
-            description="Hệ thống sẽ chạy bộ quy tắc kiểm tra 3 cấp (định dạng trường, nội kiểm logic, và đối soát chéo) trên dữ liệu đợt này."
-            onConfirm={() => onRunRulesCheck(r.id)}
-            okText="Chạy Kiểm Tra"
-            cancelText="Hủy"
-          >
-            <Button
-              type="primary"
-              size="small"
-              icon={<SafetyCertificateOutlined />}
-              style={{ background: '#003B95' }}
+        <Space size={6}>
+          <Tooltip title="Thực thi kiểm tra Validation Rules 3 cấp">
+            <Popconfirm
+              title="Thực thi kiểm tra Validation Rules?"
+              description="Hệ thống sẽ chạy bộ quy tắc kiểm tra 3 cấp (định dạng trường, nội kiểm logic, và đối soát chéo) trên dữ liệu đợt này."
+              onConfirm={() => onRunRulesCheck(r.id)}
+              okText="Chạy Kiểm Tra"
+              cancelText="Hủy"
             >
-              Kiểm Tra Rules
-            </Button>
-          </Popconfirm>
+              <Button
+                type="primary"
+                shape="circle"
+                size="small"
+                icon={<ShieldCheck size={14} />}
+                style={{ background: '#003B95', borderColor: '#003B95', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              />
+            </Popconfirm>
+          </Tooltip>
 
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => onOpenValidation(r.id)}
-          >
-            Xem Vi Phạm
-          </Button>
+          <Tooltip title="Xem danh sách vi phạm & cảnh báo rules">
+            <Button
+              shape="circle"
+              size="small"
+              icon={<Eye size={14} />}
+              onClick={() => onOpenValidation(r.id)}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            />
+          </Tooltip>
 
-          <Button
-            size="small"
-            icon={<ApartmentOutlined />}
-            onClick={() => onOpenLineage(r.id)}
-          >
-            Nguồn (Lineage)
-          </Button>
+          <Tooltip title="Xem nguồn dữ liệu lô thành phần (Lineage)">
+            <Button
+              shape="circle"
+              size="small"
+              icon={<GitBranch size={14} />}
+              onClick={() => onOpenLineage(r.id)}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            />
+          </Tooltip>
         </Space>
       ),
     },

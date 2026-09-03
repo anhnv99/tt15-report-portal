@@ -258,9 +258,20 @@ export const ReportsPage: React.FC = () => {
 
   const handleRejectVersionSubmit = async (versionId: string, reason: string) => {
     await reportingApi.rejectCicReportVersion(versionId, reason);
-    message.success('Đã từ chối phiên bản báo cáo');
+    message.success('Đã từ chối phiên bản báo cáo!');
     setRejectVersionModalOpen(false);
     loadReportData();
+  };
+
+  const handleToggleVersionActive = async (versionId: string) => {
+    try {
+      await reportingApi.toggleVersionActive(versionId);
+      message.success('Cập nhật trạng thái hiệu lực phiên bản thành công!');
+      loadReportData();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể cập nhật trạng thái');
+    }
   };
 
   const handleOpenTimeline = async (versionId: string) => {
@@ -424,6 +435,7 @@ export const ReportsPage: React.FC = () => {
                     setAdjustVersion(v);
                     setAdjustModalOpen(true);
                   }}
+                  onToggleActive={handleToggleVersionActive}
                 />
               ),
             },

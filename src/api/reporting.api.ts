@@ -89,6 +89,9 @@ export const reportingApi = {
       },
     }),
 
+  toggleVersionActive: (versionId: string) =>
+    apiClient.patch<any, CicReportVersion>(`/cic-report-versions/${versionId}/toggle-active`),
+
   // Report Artifacts
   getArtifactsByVersionId: (reportVersionId: string) =>
     apiClient.get<any, ReportArtifact[]>('/report-artifacts', {

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Card, Table, Tag, Button, Space, Typography, Switch } from 'antd';
+import { Card, Table, Tag, Button, Space, Typography, Switch, Tooltip } from 'antd';
 import { SettingOutlined, CodeOutlined } from '@ant-design/icons';
+import { SlidersHorizontal, Code } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { ReportTemplate } from '@/types';
 
@@ -78,46 +79,51 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
     {
       title: 'Trạng Thái',
       key: 'isActive',
-      width: 160,
+      width: 150,
       render: (_, r) => {
         const active = r.isActive !== false;
         return (
-          <Space>
-            <Switch
-              size="small"
-              checked={active}
-              onChange={() => onToggleActive(r.reportCode)}
-            />
-            <Tag color={active ? 'success' : 'default'}>
-              {active ? 'Hoạt động' : 'Tạm dừng'}
-            </Tag>
-          </Space>
+          <Tooltip title={active ? 'Bấm để tạm dừng biểu mẫu này' : 'Bấm để kích hoạt biểu mẫu này'}>
+            <Space size="small">
+              <Switch
+                size="small"
+                checked={active}
+                onChange={() => onToggleActive(r.reportCode)}
+              />
+              <Tag color={active ? 'success' : 'default'} style={{ fontSize: 11 }}>
+                {active ? 'Hoạt động' : 'Tạm dừng'}
+              </Tag>
+            </Space>
+          </Tooltip>
         );
       },
     },
     {
       title: 'Thao Tác',
       key: 'actions',
-      width: 220,
+      width: 120,
       fixed: 'right' as const,
       render: (_, r) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            size="small"
-            icon={<SettingOutlined />}
-            style={{ background: '#003B95' }}
-            onClick={() => onOpenDetail(r)}
-          >
-            Cấu Hình & Rules
-          </Button>
-          <Button
-            size="small"
-            icon={<CodeOutlined />}
-            onClick={() => onViewJson(r.reportCode)}
-          >
-            Xem JSON
-          </Button>
+        <Space size={6}>
+          <Tooltip title="Cấu hình chỉ tiêu, sheet nguồn & rules">
+            <Button
+              type="primary"
+              shape="circle"
+              size="small"
+              icon={<SlidersHorizontal size={14} />}
+              style={{ background: '#003B95', borderColor: '#003B95', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => onOpenDetail(r)}
+            />
+          </Tooltip>
+          <Tooltip title="Xem định dạng JSON Root Structure">
+            <Button
+              shape="circle"
+              size="small"
+              icon={<Code size={14} />}
+              onClick={() => onViewJson(r.reportCode)}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            />
+          </Tooltip>
         </Space>
       ),
     },

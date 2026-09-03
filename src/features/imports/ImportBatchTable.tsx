@@ -10,6 +10,7 @@ import {
   Card,
   Row,
   Col,
+  Tooltip,
 } from 'antd';
 import {
   CheckCircleOutlined,
@@ -21,6 +22,14 @@ import {
   SafetyCertificateOutlined,
   PlusCircleOutlined,
 } from '@ant-design/icons';
+import {
+  Play,
+  Check,
+  X,
+  Eye,
+  UploadCloud,
+  History,
+} from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { ImportBatch } from '@/types';
 
@@ -176,74 +185,89 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       },
     },
     {
-      title: 'Thao Tác Nghiệp Vụ',
+      title: 'Thao Tác',
       key: 'actions',
-      width: 320,
+      width: 210,
       fixed: 'right' as const,
       render: (_, r) => (
-        <Space size="small" wrap>
+        <Space size={6}>
           {r.status === 'UPLOADED' && (
-            <Button
-              type="primary"
-              size="small"
-              icon={<PlayCircleOutlined />}
-              style={{ background: '#003B95' }}
-              onClick={() => onStage(r.id)}
-            >
-              Tiền Xử Lý (Stage)
-            </Button>
+            <Tooltip title="Chạy tiền xử lý dữ liệu (Staging)">
+              <Button
+                type="primary"
+                shape="circle"
+                size="small"
+                icon={<Play size={14} />}
+                style={{ background: '#003B95', borderColor: '#003B95', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => onStage(r.id)}
+              />
+            </Tooltip>
           )}
 
           {r.status === 'STAGED' && (
             <>
-              <Popconfirm
-                title="Phê duyệt đợt dữ liệu này?"
-                description="Đợt dữ liệu được duyệt sẽ sẵn sàng để đưa vào module tổng hợp báo cáo."
-                onConfirm={() => onApprove(r.id)}
-                okText="Duyệt"
-                cancelText="Hủy"
-              >
-                <Button type="primary" size="small" icon={<CheckCircleOutlined />} style={{ background: '#10B981' }}>
-                  Duyệt
-                </Button>
-              </Popconfirm>
-              <Button
-                danger
-                size="small"
-                icon={<CloseCircleOutlined />}
-                onClick={() => onOpenReject(r.id)}
-              >
-                Từ Chối
-              </Button>
+              <Tooltip title="Phê duyệt đợt dữ liệu này">
+                <Popconfirm
+                  title="Phê duyệt đợt dữ liệu này?"
+                  description="Đợt dữ liệu được duyệt sẽ sẵn sàng để đưa vào module tổng hợp báo cáo."
+                  onConfirm={() => onApprove(r.id)}
+                  okText="Duyệt"
+                  cancelText="Hủy"
+                >
+                  <Button
+                    type="primary"
+                    shape="circle"
+                    size="small"
+                    icon={<Check size={14} />}
+                    style={{ background: '#10B981', borderColor: '#10B981', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  />
+                </Popconfirm>
+              </Tooltip>
+
+              <Tooltip title="Từ chối đợt dữ liệu">
+                <Button
+                  danger
+                  shape="circle"
+                  size="small"
+                  icon={<X size={14} />}
+                  onClick={() => onOpenReject(r.id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                />
+              </Tooltip>
             </>
           )}
 
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => onOpenStaging(r)}
-          >
-            {r.totalRows && r.totalRows > 0 ? `Dữ Liệu (${r.totalRows.toLocaleString()})` : 'Xem Dữ Liệu'}
-          </Button>
+          <Tooltip title={`Xem chi tiết dữ liệu Staging (${(r.totalRows || 0).toLocaleString()} dòng)`}>
+            <Button
+              shape="circle"
+              size="small"
+              icon={<Eye size={14} />}
+              onClick={() => onOpenStaging(r)}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            />
+          </Tooltip>
 
           {onOpenSupplement && r.status !== 'REJECTED' && (
-            <Button
-              size="small"
-              icon={<PlusCircleOutlined />}
-              style={{ color: '#003B95', borderColor: '#003B95' }}
-              onClick={() => onOpenSupplement(r)}
-            >
-              Bổ Sung
-            </Button>
+            <Tooltip title="Nạp bổ sung dữ liệu sửa lỗi">
+              <Button
+                shape="circle"
+                size="small"
+                icon={<UploadCloud size={14} />}
+                style={{ color: '#D97706', borderColor: '#D97706', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => onOpenSupplement(r)}
+              />
+            </Tooltip>
           )}
 
-          <Button
-            size="small"
-            icon={<HistoryOutlined />}
-            onClick={() => onOpenTimeline(r.id)}
-          >
-            Lịch Sử
-          </Button>
+          <Tooltip title="Xem lịch sử phê duyệt & timeline vết dữ liệu">
+            <Button
+              shape="circle"
+              size="small"
+              icon={<History size={14} />}
+              onClick={() => onOpenTimeline(r.id)}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            />
+          </Tooltip>
         </Space>
       ),
     },

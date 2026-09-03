@@ -169,6 +169,7 @@ export interface CicReportVersion {
   submittedBy?: string;
   submittedAt?: string;
   createdAt: string;
+  isActive?: boolean;
 }
 
 export interface CicReportEvent {
