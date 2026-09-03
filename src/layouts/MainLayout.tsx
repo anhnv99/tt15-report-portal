@@ -30,6 +30,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { getActiveBaseURL, setCustomBaseURL } from '@/api/client';
+import { RegOneBrand } from '@/components/RegOneBrand';
 import axios from 'axios';
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -168,59 +169,7 @@ export const MainLayout: React.FC = () => {
           }}
           onClick={() => navigate('/dashboard')}
         >
-          {/* RegOne Icon Badge */}
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 8,
-              background: '#0B2A6B',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(30, 99, 255, 0.3)',
-              overflow: 'hidden',
-              padding: 2,
-            }}
-          >
-            <img
-              src="/regone-icon-transparent.png"
-              alt="RegOne"
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          </div>
-
-          {!collapsed && (
-            <div style={{ marginLeft: 12, lineHeight: 1.15, overflow: 'hidden' }}>
-              <div
-                style={{
-                  fontWeight: 900,
-                  fontSize: 19,
-                  letterSpacing: '-0.3px',
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                }}
-              >
-                <span style={{ color: '#FFFFFF' }}>Reg</span>
-                <span style={{ color: '#38BDF8', marginLeft: 1 }}>One</span>
-              </div>
-              <div
-                style={{
-                  color: '#94A3B8',
-                  fontSize: 8.5,
-                  fontWeight: 500,
-                  letterSpacing: '0.2px',
-                  whiteSpace: 'nowrap',
-                  textTransform: 'none',
-                  marginTop: 2,
-                }}
-              >
-                One platform for regulatory reporting
-              </div>
-            </div>
-          )}
+          <RegOneBrand collapsed={collapsed} variant="dark" />
         </div>
 
         {/* Navigation Menu */}
