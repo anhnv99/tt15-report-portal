@@ -168,48 +168,56 @@ export const MainLayout: React.FC = () => {
           }}
           onClick={() => navigate('/dashboard')}
         >
-          {/* KT Icon Badge */}
+          {/* RegOne Icon Badge */}
           <div
             style={{
               width: 38,
               height: 38,
               borderRadius: 8,
-              background: '#0047A5',
+              background: '#0B2A6B',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#FFFFFF',
-              fontWeight: 900,
-              fontSize: 18,
-              letterSpacing: -0.5,
               flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(0, 71, 165, 0.4)',
+              boxShadow: '0 2px 8px rgba(30, 99, 255, 0.3)',
+              overflow: 'hidden',
+              padding: 2,
             }}
           >
-            KT
+            <img
+              src="/regone-icon-transparent.png"
+              alt="RegOne"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
 
           {!collapsed && (
-            <div style={{ marginLeft: 12, lineHeight: 1.2 }}>
+            <div style={{ marginLeft: 12, lineHeight: 1.15, overflow: 'hidden' }}>
               <div
                 style={{
-                  color: '#FFFFFF',
-                  fontWeight: 800,
-                  fontSize: 14,
-                  letterSpacing: '0.5px',
+                  fontWeight: 900,
+                  fontSize: 19,
+                  letterSpacing: '-0.3px',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
                 }}
               >
-                KT TECHNOLOGY
+                <span style={{ color: '#FFFFFF' }}>Reg</span>
+                <span style={{ color: '#38BDF8', marginLeft: 1 }}>One</span>
               </div>
               <div
                 style={{
-                  color: '#93C5FD',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  letterSpacing: '0.8px',
+                  color: '#94A3B8',
+                  fontSize: 8.5,
+                  fontWeight: 500,
+                  letterSpacing: '0.2px',
+                  whiteSpace: 'nowrap',
+                  textTransform: 'none',
+                  marginTop: 2,
                 }}
               >
-                TT15 REPORTING
+                One platform for regulatory reporting
               </div>
             </div>
           )}
@@ -244,8 +252,8 @@ export const MainLayout: React.FC = () => {
           }}
         >
           <div>
-            <Text strong style={{ fontSize: 16, color: '#002B66' }}>
-              Hệ Thống Báo Cáo Thông Tư 15 / CIC
+            <Text strong style={{ fontSize: 16, color: '#0B2A6B' }}>
+              RegOne — Nền Tảng Báo Cáo Tuân Thủ & CIC
             </Text>
             <Tag color="processing" style={{ marginLeft: 12, borderRadius: 10 }}>
               <CheckCircleOutlined /> Spring Boot 3 + PostgreSQL
@@ -356,10 +364,10 @@ export const MainLayout: React.FC = () => {
             fontSize: 12,
           }}
         >
-          <Text strong style={{ color: '#003B95' }}>
-            KT TECHNOLOGY COMPANY LTD
+          <Text strong style={{ color: '#0B2A6B' }}>
+            RegOne
           </Text>{' '}
-          — COMMITTED TO VALUE © {new Date().getFullYear()} TT15 Regulatory Reporting System
+          — One platform for regulatory reporting &copy; {new Date().getFullYear()}. All rights reserved.
         </Footer>
       </Layout>
 

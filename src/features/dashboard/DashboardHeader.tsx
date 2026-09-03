@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Card, Row, Col, Typography, Space, Tag, Badge, Select, Tooltip, Button } from 'antd';
 import { ReloadOutlined, CloudUploadOutlined } from '@ant-design/icons';
 import type { DataPeriod } from '@/types';
@@ -39,7 +39,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <Col xs={24} md={14}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <Title level={4} style={{ color: '#FFFFFF', margin: 0, fontWeight: 700 }}>
-              Trung Tâm Vận Hành Báo Cáo TT15 / CIC
+              RegOne — Trung Tâm Vận Hành Báo Cáo
             </Title>
             <Tag color="#0284C7" style={{ fontWeight: 600, border: 'none' }}>
               Phiên Bản 2.0
@@ -50,7 +50,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             />
           </div>
           <Paragraph style={{ color: '#94A3B8', margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-            Tập trung theo dõi các lô dữ liệu chờ duyệt, báo cáo nháp tồn đọng, lỗi kiểm tra đối soát
+            <span style={{ color: '#38BDF8', fontWeight: 600 }}>One platform for regulatory reporting</span> •{' '}
+            Theo dõi các lô dữ liệu chờ duyệt, báo cáo nháp tồn đọng, kiểm tra quy tắc đối soát
             và danh sách tác vụ cần xử lý ngay.
           </Paragraph>
         </Col>
