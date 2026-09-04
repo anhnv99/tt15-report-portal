@@ -75,7 +75,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
       width: 140,
       render: (dest) => {
         const d = (dest || 'CIC').toUpperCase();
-        if (d.includes('SVB')) return <Tag color="purple" icon={<SafetyCertificateOutlined />}>SVB (NHNN)</Tag>;
+        if (d.includes('SBV') || d.includes('SVB')) return <Tag color="green" icon={<SafetyCertificateOutlined />}>SBV (NHNN)</Tag>;
         if (d.includes('PCB')) return <Tag color="orange" icon={<GlobalOutlined />}>PCB</Tag>;
         return <Tag color="blue" icon={<BankOutlined />}>CIC (H2H)</Tag>;
       },
@@ -213,7 +213,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
                     menu={{
                       items: [
                         { key: 'CIC', label: 'Nộp sang CIC (H2H)', icon: <BankOutlined /> },
-                        { key: 'SVB', label: 'Nộp sang SVB (NHNN)', icon: <SafetyCertificateOutlined /> },
+                        { key: 'SBV', label: 'Nộp sang SBV (NHNN)', icon: <SafetyCertificateOutlined /> },
                         { key: 'PCB', label: 'Nộp sang PCB', icon: <GlobalOutlined /> },
                       ],
                       onClick: ({ key }) => onSendApprovedVersion(v, key),

@@ -174,7 +174,11 @@ export const TemplatesPage: React.FC = () => {
 
   const filteredTemplates = useMemo(() => {
     if (filterDest === 'ALL') return templates;
-    return templates.filter((t) => (t.targetDestination || 'CIC').toUpperCase() === filterDest);
+    return templates.filter((t) => {
+      const dest = (t.targetDestination || 'CIC').toUpperCase();
+      if (filterDest === 'SBV') return dest === 'SBV' || dest === 'SVB';
+      return dest === filterDest;
+    });
   }, [templates, filterDest]);
 
   return (
@@ -187,7 +191,7 @@ export const TemplatesPage: React.FC = () => {
               Cấu Hình Biểu Mẫu Báo Cáo & Bộ Quy Tắc Đối Soát (Rule Engine)
             </Title>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              Hỗ trợ phân loại đa cơ quan: CIC (TTTD Quốc gia), SVB (Ngân hàng Nhà nước), PCB (Thông tin tín dụng VN).
+              Hỗ trợ phân loại đa cơ quan: CIC (TTTD Quốc gia), SBV (Ngân hàng Nhà nước), PCB (Thông tin tín dụng VN).
             </Text>
           </Col>
           <Col xs={24} md={14} style={{ textAlign: 'right' }}>
@@ -199,7 +203,7 @@ export const TemplatesPage: React.FC = () => {
                   options={[
                     { label: `Tất cả (${templates.length})`, value: 'ALL' },
                     { label: '🔵 CIC', value: 'CIC' },
-                    { label: '🟢 SVB', value: 'SVB' },
+                    { label: '🟢 SBV', value: 'SBV' },
                     { label: '🟣 PCB', value: 'PCB' },
                   ]}
                 />

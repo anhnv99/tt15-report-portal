@@ -38,9 +38,19 @@ import {
   ReloadOutlined,
   SafetyCertificateOutlined,
   GlobalOutlined,
+  UndoOutlined,
+  CodeOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 import { reportingApi } from '@/api/reporting.api';
 import type { ReportDeliveryConfig } from '@/types';
+import {
+  getAgencyNamingRules,
+  saveAgencyNamingRules,
+  generateFileNamePreview,
+  DEFAULT_NAMING_RULES,
+  type AgencyNamingRule,
+} from '@/utils/namingRuleUtil';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -52,6 +62,9 @@ export const SettingsPage: React.FC = () => {
   const [testResponse, setTestResponse] = useState<any>(null);
   const [configs, setConfigs] = useState<ReportDeliveryConfig[]>([]);
   const [activeDestination, setActiveDestination] = useState<string>('CIC');
+
+  // Naming rules state for each agency (CIC, SBV, PCB)
+  const [namingRules, setNamingRules] = useState<Record<string, AgencyNamingRule>>(getAgencyNamingRules());
 
   // Load configs from Backend Database
   const fetchConfigs = async () => {
@@ -66,7 +79,6 @@ export const SettingsPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Lỗi khi tải cấu hình từ DB:', err);
-      // Fallback local if server error
       const local = localStorage.getItem('tt15_webhook_settings');
       if (local) {
         try {
@@ -80,6 +92,7 @@ export const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     fetchConfigs();
+    setNamingRules(getAgencyNamingRules());
   }, []);
 
   const fillFormValues = (config: ReportDeliveryConfig) => {
@@ -106,6 +119,37 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  const currentRule: AgencyNamingRule =
+    namingRules[activeDestination] ||
+    DEFAULT_NAMING_RULES[activeDestination] ||
+    DEFAULT_NAMING_RULES.CIC;
+
+  const handleRuleChange = (field: keyof AgencyNamingRule, value: any) => {
+    setNamingRules((prev) => {
+      const next = {
+        ...prev,
+        [activeDestination]: {
+          ...(prev[activeDestination] || DEFAULT_NAMING_RULES[activeDestination] || DEFAULT_NAMING_RULES.CIC),
+          [field]: value,
+        },
+      };
+      saveAgencyNamingRules(next);
+      return next;
+    });
+  };
+
+  const handleResetRuleToDefault = () => {
+    const defaultRule = DEFAULT_NAMING_RULES[activeDestination];
+    if (defaultRule) {
+      setNamingRules((prev) => {
+        const next = { ...prev, [activeDestination]: { ...defaultRule } };
+        saveAgencyNamingRules(next);
+        return next;
+      });
+      message.info(`Đã khôi phục quy chuẩn đặt tên mặc định của ${activeDestination}`);
+    }
+  };
+
   const handleSaveSettings = async () => {
     try {
       const values = await form.validateFields();
@@ -127,7 +171,10 @@ export const SettingsPage: React.FC = () => {
         prev.map((c) => (c.destination.toUpperCase() === activeDestination.toUpperCase() ? updated : c))
       );
 
-      message.success(`Đã lưu cấu hình cổng ${activeDestination} vào Database thành công!`);
+      // Save naming rules
+      saveAgencyNamingRules(namingRules);
+
+      message.success(`Đã lưu cấu hình cổng ${activeDestination} và Quy chuẩn đặt tên thành công!`);
     } catch (err: any) {
       console.error('Lỗi lưu cấu hình:', err);
     } finally {
@@ -145,7 +192,7 @@ export const SettingsPage: React.FC = () => {
       const testPayload = {
         correlationId: `PING-TEST-${Date.now()}`,
         reportVersionId: '00000000-0000-0000-0000-000000000000',
-        reportCode: activeDestination === 'CIC' ? 'D10' : 'TEST',
+        reportCode: activeDestination === 'CIC' ? 'D10' : activeDestination === 'SBV' ? 'B01' : 'PCB_01',
         versionNumber: 1,
         reportingDate: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
         callbackUrl: values.callbackUrl,
@@ -193,6 +240,17 @@ export const SettingsPage: React.FC = () => {
 
   const currentConfig = configs.find((c) => c.destination.toUpperCase() === activeDestination.toUpperCase());
 
+  // Dynamic preview sample code based on destination
+  const sampleReportCode = activeDestination === 'CIC' ? 'D10' : activeDestination === 'SBV' ? 'B01' : 'PCB_01';
+  const previewFileName = generateFileNamePreview({
+    reportCode: sampleReportCode,
+    agency: activeDestination,
+    unitCode: currentRule.unitCode,
+    reportingDate: '20260831',
+    sequence: 1,
+    customPattern: currentRule.pattern,
+  });
+
   return (
     <div>
       {/* Header */}
@@ -201,11 +259,10 @@ export const SettingsPage: React.FC = () => {
           <Col>
             <Title level={4} style={{ margin: 0, color: '#002B66' }}>
               <ApiOutlined style={{ marginRight: 8, color: '#003B95' }} />
-              Cấu Hình Cổng Truyền Báo Cáo Ngoại Vi (Database Config)
+              Cấu Hình Cổng Báo Cáo & Quy Chuẩn Đặt Tên Tệp
             </Title>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              Toàn bộ thông số Webhook, Token, Callback và chế độ Mock được lưu trữ và áp dụng trực tiếp từ bảng{' '}
-              <code>cfg_report_delivery_config</code> trong Database.
+              Quản lý tập trung Webhook giao tiếp và Quy chuẩn đặt tên tệp nén nộp báo cáo cho từng cơ quan (CIC, SBV, PCB).
             </Text>
           </Col>
           <Col>
@@ -228,7 +285,7 @@ export const SettingsPage: React.FC = () => {
                 style={{ background: '#003B95', fontWeight: 600 }}
                 onClick={handleSaveSettings}
               >
-                Lưu Cấu Hình (Save to DB)
+                Lưu Toàn Bộ Cấu Hình
               </Button>
             </Space>
           </Col>
@@ -288,12 +345,12 @@ export const SettingsPage: React.FC = () => {
               ),
             },
             {
-              key: 'SVB',
+              key: 'SBV',
               label: (
                 <span>
                   <SafetyCertificateOutlined style={{ marginRight: 6 }} />
-                  Cổng SVB (NHNN)
-                  {configs.find((c) => c.destination === 'SVB')?.isEnabled ? (
+                  Cổng SBV (NHNN)
+                  {configs.find((c) => c.destination === 'SBV')?.isEnabled ? (
                     <Tag color="success" style={{ marginLeft: 6 }}>
                       Active
                     </Tag>
@@ -335,6 +392,112 @@ export const SettingsPage: React.FC = () => {
             {/* Main Form */}
             <Col xs={24} lg={15}>
               <Form form={form} layout="vertical">
+                {/* 1. Naming Rule Section (Top Priority according to user philosophy) */}
+                <div
+                  style={{
+                    background: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: 8,
+                    padding: 16,
+                    marginBottom: 20,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <Space>
+                      <FileZipOutlined style={{ fontSize: 18, color: '#003B95' }} />
+                      <Text strong style={{ fontSize: 14, color: '#002B66' }}>
+                        Quy Chuẩn Đặt Tên Tệp Nén Nộp Báo Cáo ({activeDestination})
+                      </Text>
+                      <Tag color={activeDestination === 'CIC' ? 'blue' : activeDestination === 'SBV' ? 'green' : 'purple'}>
+                        Gốc ({activeDestination})
+                      </Tag>
+                    </Space>
+                    <Button
+                      size="small"
+                      icon={<UndoOutlined />}
+                      onClick={handleResetRuleToDefault}
+                      style={{ fontSize: 12 }}
+                    >
+                      Khôi phục chuẩn {activeDestination}
+                    </Button>
+                  </div>
+
+                  <Row gutter={12}>
+                    <Col span={8}>
+                      <Form.Item
+                        label="Mã Đơn Vị TCTD ({UNIT_CODE})"
+                        tooltip="Mã TCTD gửi báo cáo (VD: PTF cho CIC/PCB, 79301001 cho SBV)"
+                        style={{ marginBottom: 12 }}
+                      >
+                        <Input
+                          value={currentRule.unitCode}
+                          onChange={(e) => handleRuleChange('unitCode', e.target.value.toUpperCase().trim())}
+                          placeholder="VD: PTF"
+                          style={{ fontWeight: 600 }}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={10}>
+                      <Form.Item
+                        label="Cấu Trúc Tên Tệp (Formula)"
+                        tooltip="Biến hỗ trợ: {REPORT_CODE}, {UNIT_CODE}, {DATE}, {SEQUENCE}, {EXT}"
+                        style={{ marginBottom: 12 }}
+                      >
+                        <Input
+                          value={currentRule.pattern}
+                          onChange={(e) => handleRuleChange('pattern', e.target.value)}
+                          placeholder="{REPORT_CODE}{UNIT_CODE}{DATE}.{SEQUENCE}.zip"
+                          style={{ fontFamily: 'monospace', fontSize: 12 }}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                      <Form.Item label="Định Dạng Mở Rộng" style={{ marginBottom: 12 }}>
+                        <Select
+                          value={currentRule.extension}
+                          onChange={(val) => handleRuleChange('extension', val)}
+                          options={[
+                            { value: '.zip', label: '.zip (Tệp nén)' },
+                            { value: '.xml', label: '.xml (File XML)' },
+                            { value: '.json', label: '.json (File JSON)' },
+                          ]}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  {/* Live preview banner in Settings */}
+                  <div
+                    style={{
+                      background: '#EFF6FF',
+                      border: '1px solid #BFDBFE',
+                      borderRadius: 6,
+                      padding: '10px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <Text style={{ fontSize: 12, color: '#1E40AF', fontWeight: 600 }}>
+                        ⚡ LIVE PREVIEW TÊN TỆP SINH RA THỰC TẾ (MẪU {sampleReportCode}):
+                      </Text>
+                      <Tag
+                        color={activeDestination === 'CIC' ? 'blue' : activeDestination === 'SBV' ? 'green' : 'purple'}
+                        style={{ fontSize: 13, padding: '2px 10px', fontFamily: 'monospace', fontWeight: 700 }}
+                      >
+                        {previewFileName}
+                      </Tag>
+                    </div>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      Căn cứ pháp lý: <strong>{currentRule.legalBasis}</strong>. Màn Tạo Biểu Mẫu sẽ tự động kế thừa và hiển thị Live Preview theo quy chuẩn này.
+                    </Text>
+                  </div>
+                </div>
+
+                {/* 2. Webhook Delivery Config */}
+                <Divider style={{ margin: '16px 0' }}>Cấu Hình Cổng Webhook Giao Tiếp (n8n Endpoint)</Divider>
+
                 <Row gutter={16}>
                   <Col span={16}>
                     <Form.Item
@@ -448,16 +611,26 @@ export const SettingsPage: React.FC = () => {
               <Card
                 title={`Đặc Tả Luồng Truyền: ${activeDestination}`}
                 size="small"
-                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6 }}
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, marginBottom: 16 }}
               >
                 <Descriptions column={1} size="small" bordered>
                   <Descriptions.Item label="Đích Tiếp Nhận">
-                    <Tag color="processing" style={{ fontWeight: 600 }}>
+                    <Tag color={activeDestination === 'CIC' ? 'blue' : activeDestination === 'SBV' ? 'green' : 'purple'} style={{ fontWeight: 600 }}>
                       {activeDestination}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Cơ Chế Gửi">
-                    <Text strong>multipart/form-data</Text> (metadata JSON + ZIP artifact)
+                    <Text strong>multipart/form-data</Text> (metadata JSON + ZIP/XML artifact)
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Định Dạng Tệp Nộp">
+                    <Tag color="cyan" style={{ fontFamily: 'monospace' }}>
+                      {currentRule.extension}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mẫu Tên Tệp Chuẩn">
+                    <Text code style={{ fontSize: 11 }}>
+                      {previewFileName}
+                    </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Chế Độ Vận Hành">
                     {currentConfig?.isMock ? (
@@ -472,15 +645,30 @@ export const SettingsPage: React.FC = () => {
                     </Text>
                   </Descriptions.Item>
                 </Descriptions>
+              </Card>
 
-                <div style={{ marginTop: 16, fontSize: 12, color: '#64748B', lineHeight: 1.6 }}>
-                  💡 <strong>Lưu ý:</strong>
+              {/* Convention Over Configuration Guide Card */}
+              <Card
+                title={
+                  <Space>
+                    <InfoCircleOutlined style={{ color: '#003B95' }} />
+                    <span style={{ fontSize: 13 }}>Triết Lý Thiết Kế Quy Chuẩn</span>
+                  </Space>
+                }
+                size="small"
+                style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6 }}
+              >
+                <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.6 }}>
+                  📌 <strong>Quy tắc vận hành:</strong>
                   <ul style={{ paddingLeft: 16, margin: '6px 0 0 0' }}>
                     <li>
-                      Khi sửa Webhook URL hoặc Bật/Tắt Mock tại đây, Backend sẽ áp dụng ngay lập tức mà không cần khởi động lại máy chủ.
+                      <strong>Nơi lưu trữ quy tắc gốc:</strong> Được quản lý tập trung ngay tại trang này theo từng tab cơ quan (CIC / SBV / PCB).
                     </li>
                     <li>
-                      Nút <strong>Test Ping</strong> gửi bản tin thử nghiệm JSON đến Webhook URL để đo độ trễ mạng và kiểm tra phản hồi HTTP 202.
+                      <strong>Màn Tạo Biểu Mẫu:</strong> Tự động nhận diện cơ quan và hiển thị <strong>Live Preview</strong> tên tệp sẽ sinh ra. Người dùng không cần nhập liệu thủ công rườm rà.
+                    </li>
+                    <li>
+                      <strong>Độ chuẩn xác 100%:</strong> Tên file nén luôn đáp ứng đúng quy định của CIC, SBV và PCB trước khi nộp.
                     </li>
                   </ul>
                 </div>

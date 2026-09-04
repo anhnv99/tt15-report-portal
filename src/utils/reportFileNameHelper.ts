@@ -1,3 +1,5 @@
+import { generateFileNamePreview } from './namingRuleUtil';
+
 /**
  * Tiện ích tự động sinh Tên Tệp Báo Cáo Chuẩn theo Thông tư 15 & Quyết định 573/QĐ-NHNN
  * Cấu trúc chuẩn: [MÃ_BÁO_CÁO][MÃ_ĐƠN_VỊ][YYYYMMDD].[STT_3_CHỮ_SỐ]
@@ -7,12 +9,15 @@ export const getStandardReportFileName = (
   reportCode?: string,
   reportingDate?: string,
   versionNumber?: number,
-  reportingUnitCode: string = '79301001',
+  reportingUnitCode: string = 'PTF',
   extension?: string
 ): string => {
-  const code = (reportCode || 'D10').toUpperCase().trim();
-  const dateDigits = (reportingDate || '20260831').replace(/[^0-9]/g, '');
-  const seq = String(versionNumber || 1).padStart(3, '0');
-  const base = `${code}${reportingUnitCode}${dateDigits}.${seq}`;
-  return extension ? `${base}.${extension.replace(/^\./, '')}` : base;
+  return generateFileNamePreview({
+    reportCode,
+    reportingDate,
+    sequence: versionNumber || 1,
+    unitCode: reportingUnitCode,
+    customPattern: extension ? `{REPORT_CODE}{UNIT_CODE}{DATE}.{SEQUENCE}.${extension.replace(/^\./, '')}` : undefined,
+  });
 };
+

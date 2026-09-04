@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Switch, Row, Col, Alert, Typography, Tag, Space } from 'antd';
-import { FileAddOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Select, Switch, Row, Col, Alert, Typography, Tag, Space, Button, Tooltip } from 'antd';
+import { FileAddOutlined, FileZipOutlined, CheckCircleFilled, SettingOutlined } from '@ant-design/icons';
 import { catalogApi } from '@/api/catalog.api';
 import type { DataPeriodType } from '@/types';
+import {
+  detectAgencyFromReportCode,
+  generateFileNamePreview,
+  getAgencyRule,
+  type AgencyNamingRule,
+} from '@/utils/namingRuleUtil';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -23,14 +29,26 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   const [form] = Form.useForm();
   const [periodTypes, setPeriodTypes] = useState<DataPeriodType[]>([]);
   const [periodTypesLoading, setPeriodTypesLoading] = useState(false);
+  const [targetDestination, setTargetDestination] = useState<string>('CIC');
+  const [reportCodeVal, setReportCodeVal] = useState<string>('D10');
+  const [showCustomNaming, setShowCustomNaming] = useState<boolean>(false);
+  const [customPattern, setCustomPattern] = useState<string>('');
 
   useEffect(() => {
     if (open) {
       form.resetFields();
+      setTargetDestination('CIC');
+      setReportCodeVal('D10');
+      setShowCustomNaming(false);
+      setCustomPattern('');
+
       form.setFieldsValue({
         targetDestination: 'CIC',
+        reportCode: 'D10',
+        filePrefix: 'D10',
+        templateNumber: '01',
         frequency: 'MONTHLY',
-        sourceReference: 'Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN',
+        sourceReference: getAgencyRule('CIC').legalBasis,
         rootStructure: JSON.stringify(
           {
             MA_DON_VI: '79301001',
@@ -49,13 +67,9 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   }, [open, form]);
 
   const handleTargetDestinationChange = (dest: string) => {
-    if (dest === 'CIC') {
-      form.setFieldValue('sourceReference', 'Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN');
-    } else if (dest === 'SVB') {
-      form.setFieldValue('sourceReference', 'Thông tư 35/2015/TT-NHNN & Thông tư 41/2016/TT-NHNN');
-    } else if (dest === 'PCB') {
-      form.setFieldValue('sourceReference', 'Nghị định 58/2021/NĐ-CP & Quy chuẩn dữ liệu PCB');
-    }
+    setTargetDestination(dest);
+    const rule = getAgencyRule(dest);
+    form.setFieldValue('sourceReference', rule.legalBasis);
   };
 
   const loadPeriodTypes = async () => {
@@ -85,20 +99,15 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
 
   const handleReportCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const code = e.target.value.toUpperCase().trim();
+    setReportCodeVal(code || 'D10');
     form.setFieldValue('reportCode', code);
     form.setFieldValue('filePrefix', code);
 
     // Tự động nhận diện cơ quan đích và căn cứ pháp lý theo quy chuẩn đặt tên
-    if (code.startsWith('PCB')) {
-      form.setFieldValue('targetDestination', 'PCB');
-      form.setFieldValue('sourceReference', 'Nghị định 58/2021/NĐ-CP & Quy chuẩn dữ liệu PCB');
-    } else if (code.startsWith('B') || code.startsWith('BC') || code.startsWith('CAR') || code.startsWith('TK')) {
-      form.setFieldValue('targetDestination', 'SVB');
-      form.setFieldValue('sourceReference', 'Thông tư 35/2015/TT-NHNN & Thông tư 41/2016/TT-NHNN');
-    } else if (code.startsWith('D')) {
-      form.setFieldValue('targetDestination', 'CIC');
-      form.setFieldValue('sourceReference', 'Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN');
-    }
+    const detected = detectAgencyFromReportCode(code);
+    setTargetDestination(detected);
+    form.setFieldValue('targetDestination', detected);
+    form.setFieldValue('sourceReference', getAgencyRule(detected).legalBasis);
 
     // Auto update default json
     try {
@@ -110,12 +119,23 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     }
   };
 
+  // Tính toán Live Preview tên tệp theo quy chuẩn từ Settings
+  const previewFileName = generateFileNamePreview({
+    reportCode: reportCodeVal || 'D10',
+    agency: targetDestination,
+    reportingDate: '20260831',
+    sequence: 1,
+    customPattern: customPattern.trim() ? customPattern.trim() : undefined,
+  });
+
+  const currentAgencyRule = getAgencyRule(targetDestination);
+
   return (
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <FileAddOutlined style={{ color: '#003B95', fontSize: 20 }} />
-          <span>Tạo Mới Biểu Mẫu Báo Cáo (QĐ 573 / TT15)</span>
+          <span>Tạo Mới Biểu Mẫu Báo Cáo (CIC / SBV / PCB)</span>
         </div>
       }
       open={open}
@@ -124,25 +144,42 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       confirmLoading={loading}
       okText="Tạo Biểu Mẫu"
       cancelText="Hủy"
-      width={720}
+      width={740}
       destroyOnClose
     >
       <Alert
-        message="Quy Chuẩn Đặt Tên & Nhận Diện Tự Động"
-        description="Hệ thống tự động nhận diện cơ quan đích theo tiền tố: D* → CIC (QĐ 573 / TT15); B*/CAR* → SVB (NHNN); PCB* → PCB. Bảng staging BI ETL tuân thủ quy tắc: tempo_{mã}_{phân_đoạn} kèm 4 cột điều khiển (pk_id, kdl_id, version, rpt_cd)."
+        message="Hệ Thống Tự Động Hóa Quy Chuẩn Đặt Tên"
+        description="Khi nhập Mã Biểu Mẫu, hệ thống sẽ tự động xác định Cơ Quan Tiếp Nhận, Căn cứ pháp lý và áp dụng Quy tắc đặt tên tệp nén nộp được cấu hình tại Màn Cài Đặt. Người dùng chỉ cần xác nhận Live Preview bên dưới."
         type="info"
         showIcon
-        style={{ marginBottom: 20 }}
+        style={{ marginBottom: 16 }}
       />
 
       <Form form={form} layout="vertical">
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
+              name="reportCode"
+              label="Mã Biểu Mẫu (Bắt buộc)"
+              rules={[
+                { required: true, message: 'Vui lòng nhập mã biểu mẫu (vd: D10, D31, B01, PCB_01)' },
+                { pattern: /^[A-Za-z0-9_-]+$/, message: 'Mã chỉ chứa chữ hoa, số và gạch ngang' },
+              ]}
+              extra="Ví dụ: D10 (CIC), B01 (SBV), PCB_01 (PCB)"
+            >
+              <Input
+                placeholder="VD: D10"
+                onChange={handleReportCodeChange}
+                style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: 15 }}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
               name="targetDestination"
               label="Đơn Vị Tiếp Nhận Báo Cáo (Cơ quan đích)"
               rules={[{ required: true, message: 'Vui lòng chọn cơ quan tiếp nhận' }]}
-              extra="Quy định cổng nộp và định dạng xuất file tương ứng"
+              extra="Tự động nhận diện từ tiền tố mã biểu mẫu"
             >
               <Select
                 onChange={handleTargetDestinationChange}
@@ -152,16 +189,16 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                     label: (
                       <Space>
                         <Tag color="blue" style={{ fontWeight: 600 }}>CIC</Tag>
-                        <span>Trung tâm Thông tin Tín dụng Quốc gia (NHNN)</span>
+                        <span>Trung tâm Tín dụng Quốc gia</span>
                       </Space>
                     ),
                   },
                   {
-                    value: 'SVB',
+                    value: 'SBV',
                     label: (
                       <Space>
-                        <Tag color="green" style={{ fontWeight: 600 }}>SVB / SBV</Tag>
-                        <span>Cổng Giám sát Ngân hàng Nhà nước</span>
+                        <Tag color="green" style={{ fontWeight: 600 }}>SBV</Tag>
+                        <span>Ngân hàng Nhà nước Việt Nam</span>
                       </Space>
                     ),
                   },
@@ -170,7 +207,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                     label: (
                       <Space>
                         <Tag color="purple" style={{ fontWeight: 600 }}>PCB</Tag>
-                        <span>Công ty Thông tin Tín dụng Việt Nam</span>
+                        <span>Thông tin Tín dụng Việt Nam</span>
                       </Space>
                     ),
                   },
@@ -178,24 +215,82 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item
-              name="reportCode"
-              label="Mã Biểu Mẫu"
-              rules={[
-                { required: true, message: 'Vui lòng nhập mã biểu mẫu (vd: D10, D31, PCB_01)' },
-                { pattern: /^[A-Za-z0-9_-]+$/, message: 'Mã chỉ chứa chữ hoa, số và gạch ngang' },
-              ]}
-              extra="Ví dụ: D10, D31, D99, PCB_01, B01"
-            >
-              <Input
-                placeholder="VD: D99"
-                onChange={handleReportCodeChange}
-                style={{ fontWeight: 600, textTransform: 'uppercase' }}
-              />
-            </Form.Item>
-          </Col>
         </Row>
+
+        {/* --- LIVE PREVIEW BOX NỔI BẬT THEO TRIẾT LÝ USER YÊU CẦU --- */}
+        <div
+          style={{
+            background: '#F0F7FF',
+            border: '1.5px solid #ADC6FF',
+            borderRadius: 8,
+            padding: '12px 16px',
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <Space>
+              <FileZipOutlined style={{ color: '#003B95', fontSize: 16 }} />
+              <Text strong style={{ color: '#002B66', fontSize: 13 }}>
+                Tên Tệp Nén Nộp Tự Động Sinh (Live Preview Chuẩn {targetDestination}):
+              </Text>
+            </Space>
+            <Tag color={targetDestination === 'CIC' ? 'blue' : targetDestination === 'SBV' ? 'green' : 'purple'} style={{ fontWeight: 700 }}>
+              Cơ quan: {targetDestination}
+            </Tag>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 15,
+                fontWeight: 700,
+                color: '#1D39C4',
+                background: '#FFFFFF',
+                border: '1px dashed #2F54EB',
+                borderRadius: 6,
+                padding: '6px 14px',
+                flex: 1,
+                minWidth: 260,
+              }}
+            >
+              📦 {previewFileName}
+            </div>
+
+            <Button
+              type="dashed"
+              size="small"
+              icon={<SettingOutlined />}
+              onClick={() => setShowCustomNaming(!showCustomNaming)}
+              style={{ fontSize: 12 }}
+            >
+              {showCustomNaming ? 'Dùng Chuẩn Cài Đặt' : 'Tùy Biến Riêng'}
+            </Button>
+          </div>
+
+          {showCustomNaming && (
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #ADC6FF' }}>
+              <Form.Item
+                name="customNamingPattern"
+                label={<span style={{ fontSize: 12 }}>Quy tắc tên file tùy biến riêng cho mẫu này (Ghi đè Cài Đặt)</span>}
+                style={{ marginBottom: 0 }}
+                extra="Biến hỗ trợ: {REPORT_CODE}, {UNIT_CODE}, {DATE}, {SEQUENCE}, {EXT}"
+              >
+                <Input
+                  placeholder={currentAgencyRule.pattern}
+                  value={customPattern}
+                  onChange={(e) => setCustomPattern(e.target.value)}
+                  style={{ fontFamily: 'monospace' }}
+                />
+              </Form.Item>
+            </div>
+          )}
+
+          <div style={{ marginTop: 6, fontSize: 11, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CheckCircleFilled style={{ color: '#16A34A' }} />
+            <span>Kế thừa trực tiếp từ <strong>Màn Cài Đặt</strong>. Đảm bảo 100% hợp lệ khi nộp sang cổng {targetDestination}.</span>
+          </div>
+        </div>
 
         <Row gutter={16}>
           <Col span={12}>
@@ -213,9 +308,9 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               name="filePrefix"
               label="Tiền Tố File Đóng Gói"
               rules={[{ required: true, message: 'Vui lòng nhập tiền tố file' }]}
-              extra="Ví dụ: D10, D31, PCB"
+              extra="Ví dụ: D10, B01, PCB"
             >
-              <Input placeholder="VD: D99" />
+              <Input placeholder="VD: D10" />
             </Form.Item>
           </Col>
         </Row>
@@ -225,7 +320,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           label="Tên Biểu Mẫu Báo Cáo"
           rules={[{ required: true, message: 'Vui lòng nhập tên đầy đủ của biểu mẫu' }]}
         >
-          <Input placeholder="VD: Báo cáo tình hình phát sinh nợ xấu và các khoản vay đặc biệt..." />
+          <Input placeholder="VD: Báo cáo thông tin tín dụng khách hàng doanh nghiệp..." />
         </Form.Item>
 
         <Row gutter={16}>
@@ -303,9 +398,9 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               },
             },
           ]}
-          extra="Cấu trúc khung JSON tiêu chuẩn truyền nhận báo cáo sang CIC"
+          extra="Cấu trúc khung JSON tiêu chuẩn truyền nhận báo cáo sang cơ quan đích"
         >
-          <TextArea rows={6} style={{ fontFamily: 'monospace', fontSize: 12 }} />
+          <TextArea rows={5} style={{ fontFamily: 'monospace', fontSize: 12 }} />
         </Form.Item>
       </Form>
     </Modal>
