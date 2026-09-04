@@ -139,4 +139,11 @@ export const reportingApi = {
 
   updateDeliveryConfig: (destination: string, data: Partial<ReportDeliveryConfig>) =>
     apiClient.put<any, ReportDeliveryConfig>(`/report-delivery-configs/${destination}`, data),
+
+  // System Profile from application.yml
+  getSystemProfile: () =>
+    apiClient.get<any, { reportingUnitCode: string; reporterName: string; reporterPhone: string; reporterEmail: string }>(
+      '/report-delivery-configs/profile'
+    ),
 };
+

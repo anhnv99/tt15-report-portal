@@ -62,6 +62,7 @@ export const SettingsPage: React.FC = () => {
   const [testResponse, setTestResponse] = useState<any>(null);
   const [configs, setConfigs] = useState<ReportDeliveryConfig[]>([]);
   const [activeDestination, setActiveDestination] = useState<string>('CIC');
+  const [systemProfile, setSystemProfile] = useState<{ reportingUnitCode: string; reporterName: string } | null>(null);
 
   // Naming rules state for each agency (CIC, SBV, PCB)
   const [namingRules, setNamingRules] = useState<Record<string, AgencyNamingRule>>(getAgencyNamingRules());
@@ -93,6 +94,13 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     fetchConfigs();
     setNamingRules(getAgencyNamingRules());
+    reportingApi.getSystemProfile()
+      .then((res: any) => {
+        if (res && res.reportingUnitCode) {
+          setSystemProfile(res);
+        }
+      })
+      .catch((err) => console.log('Profile fetch error:', err));
   }, []);
 
   const fillFormValues = (config: ReportDeliveryConfig) => {
@@ -425,8 +433,23 @@ export const SettingsPage: React.FC = () => {
                   <Row gutter={12}>
                     <Col span={8}>
                       <Form.Item
-                        label="Mã Đơn Vị TCTD ({UNIT_CODE})"
-                        tooltip="Mã TCTD gửi báo cáo (VD: PTF cho CIC/PCB, 79301001 cho SBV)"
+                        label={
+                          <Space size={4}>
+                            <span>Mã Đơn Vị TCTD ({'{UNIT_CODE}'})</span>
+                            {systemProfile?.reportingUnitCode && (
+                              <Tooltip title="Mã đơn vị khai báo gốc trong application.yaml (Click để áp dụng)">
+                                <Tag
+                                  color="cyan"
+                                  style={{ cursor: 'pointer', fontSize: 11, marginInlineEnd: 0 }}
+                                  onClick={() => handleRuleChange('unitCode', systemProfile.reportingUnitCode)}
+                                >
+                                  yaml: {systemProfile.reportingUnitCode}
+                                </Tag>
+                              </Tooltip>
+                            )}
+                          </Space>
+                        }
+                        tooltip="Mã TCTD gửi báo cáo (VD: PTF cho CIC/PCB, 79301001 cho SBV, hoặc lấy từ application.yaml)"
                         style={{ marginBottom: 12 }}
                       >
                         <Input
@@ -621,6 +644,14 @@ export const SettingsPage: React.FC = () => {
                   </Descriptions.Item>
                   <Descriptions.Item label="Cơ Chế Gửi">
                     <Text strong>multipart/form-data</Text> (metadata JSON + ZIP/XML artifact)
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mã Gốc (application.yaml)">
+                    <Space>
+                      <Tag color="geekblue" style={{ fontWeight: 600 }}>
+                        {systemProfile?.reportingUnitCode || '79301001'}
+                      </Tag>
+                      <Text type="secondary" style={{ fontSize: 11 }}>({systemProfile?.reporterName || 'Pham Maker'})</Text>
+                    </Space>
                   </Descriptions.Item>
                   <Descriptions.Item label="Định Dạng Tệp Nộp">
                     <Tag color="cyan" style={{ fontFamily: 'monospace' }}>
