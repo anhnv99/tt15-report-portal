@@ -449,13 +449,13 @@ export const SettingsPage: React.FC = () => {
                             )}
                           </div>
                         }
-                        tooltip="Biến {UNIT_CODE}: Mã định danh gửi báo cáo (VD: PTF hoặc 79301001)"
+                        tooltip="Biến {UNIT_CODE}: Mã định danh TCTD do NHNN cấp (VD: 79301001 theo QĐ 573 / TT15)"
                         style={{ marginBottom: 12 }}
                       >
                         <Input
                           value={currentRule.unitCode}
                           onChange={(e) => handleRuleChange('unitCode', e.target.value.toUpperCase().trim())}
-                          placeholder="VD: PTF"
+                          placeholder={systemProfile?.reportingUnitCode || "79301001"}
                           style={{ fontWeight: 600 }}
                         />
                       </Form.Item>

@@ -9,7 +9,7 @@ export const getStandardReportFileName = (
   reportCode?: string,
   reportingDate?: string,
   versionNumber?: number,
-  reportingUnitCode: string = 'PTF',
+  reportingUnitCode: string = '79301001',
   extension?: string
 ): string => {
   return generateFileNamePreview({

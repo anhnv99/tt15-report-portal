@@ -19,7 +19,7 @@ export const DEFAULT_NAMING_RULES: Record<string, AgencyNamingRule> = {
   CIC: {
     agency: 'CIC',
     agencyName: 'Trung tâm Thông tin Tín dụng Quốc gia (CIC)',
-    unitCode: 'PTF',
+    unitCode: '79301001',
     pattern: '{REPORT_CODE}{UNIT_CODE}{DATE}.{SEQUENCE}.zip',
     extension: '.zip',
     sequenceDigits: 3,
@@ -39,7 +39,7 @@ export const DEFAULT_NAMING_RULES: Record<string, AgencyNamingRule> = {
   PCB: {
     agency: 'PCB',
     agencyName: 'Công ty Cổ phần Thông tin Tín dụng Việt Nam (PCB)',
-    unitCode: 'PTF',
+    unitCode: '79301001',
     pattern: 'PCB_{REPORT_CODE}_{UNIT_CODE}_{DATE}.{SEQUENCE}.zip',
     extension: '.zip',
     sequenceDigits: 3,
@@ -58,11 +58,15 @@ export const getAgencyNamingRules = (): Record<string, AgencyNamingRule> => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_NAMING_RULES;
     const parsed = JSON.parse(raw);
-    return {
+    const rules: Record<string, AgencyNamingRule> = {
       CIC: { ...DEFAULT_NAMING_RULES.CIC, ...(parsed.CIC || {}) },
       SBV: { ...DEFAULT_NAMING_RULES.SBV, ...(parsed.SBV || parsed.SVB || {}) },
       PCB: { ...DEFAULT_NAMING_RULES.PCB, ...(parsed.PCB || {}) },
     };
+    // Đảm bảo chuẩn mã số TCTD do NHNN cấp theo QĐ 573 / Thông tư 15
+    if (rules.CIC.unitCode === 'PTF') rules.CIC.unitCode = '79301001';
+    if (rules.PCB.unitCode === 'PTF') rules.PCB.unitCode = '79301001';
+    return rules;
   } catch {
     return DEFAULT_NAMING_RULES;
   }
@@ -132,7 +136,7 @@ export const generateFileNamePreview = (params: GenerateFileNameParams): string 
   const { reportCode = 'D10', agency = 'CIC', reportingDate = '20260831', sequence = 1, customPattern } = params;
 
   const rule = getAgencyRule(agency);
-  const uCode = (params.unitCode || rule.unitCode || 'PTF').trim();
+  const uCode = (params.unitCode || rule.unitCode || '79301001').trim();
   const rCode = (reportCode || 'D10').toUpperCase().trim();
   const dateStr = reportingDate.replace(/[^0-9]/g, '').slice(0, 8) || '20260831';
   const seqStr = String(sequence || 1).padStart(rule.sequenceDigits || 3, '0');
