@@ -67,43 +67,29 @@ export const DashboardPage: React.FC = () => {
 
   // Operational Pending & Alert Metrics
   const pendingStats = useMemo(() => {
-    // 1. Batches Pending Checker Approval (STAGED) or Initial Processing (UPLOADED)
+    // 1. Batches Pending Checker Approval (PROCESSED / STAGED) or Initial Processing (RECEIVED / UPLOADED)
     const pendingBatches = filteredBatches.filter(
-      (b) => b.status === 'STAGED' || b.status === 'UPLOADED'
+      (b) =>
+        b.status === 'PROCESSED' ||
+        b.status === 'STAGED' ||
+        b.status === 'RECEIVED' ||
+        b.status === 'UPLOADED' ||
+        b.status === 'PROCESSING'
     );
     const getBatchErrorRows = (b: ImportBatch) => {
-      if (typeof b.errorRows === 'number' && b.errorRows > 0) return b.errorRows;
-      if (b.status === 'REJECTED') return 2;
-      const fn = (b.fileName || '').toLowerCase();
-      if (fn.includes('loi_dinh_dang')) return 4;
-      if (fn.includes('loi_nghiep_vu')) return 3;
-      if (fn.includes('loi_dp')) return 2;
-      if (fn.includes('loi') || fn.includes('error')) return 3;
+      if (typeof b.errorRows === 'number') return b.errorRows;
       return 0;
     };
 
     const getBatchValidRows = (b: ImportBatch) => {
-      if (typeof b.validRows === 'number' && b.validRows > 0) return b.validRows;
-      const fn = b.fileName || '';
-      if (fn.includes('DOT2_CHODUYET')) return 8;
-      if (fn.includes('DOT_0309')) return 10;
-      if (fn.includes('BO_SUNG_T9')) return 6;
-      if (fn.includes('KHACH_HANG_20260831_01')) return 15;
-      if (fn.includes('TIN_DUNG_20260831_01')) return 20;
-      if (fn.includes('TSBD_20260831')) return 12;
-      if (fn.includes('NGOAI_BANG')) return 8;
-      if (fn.includes('PHAN_LOAI_NO_T8')) return 15;
-      if (fn.includes('THE_TIN_DUNG_T8')) return 10;
-      if (fn.includes('LOI_DINH_DANG')) return 6;
-      if (fn.includes('LOI_NGHIEP_VU')) return 5;
-      if (fn.includes('LOI_DP')) return 3;
-      const total = b.totalRows && b.totalRows > 0 ? b.totalRows : 15;
+      if (typeof b.validRows === 'number') return b.validRows;
+      const total = typeof b.totalRows === 'number' ? b.totalRows : 0;
       const err = getBatchErrorRows(b);
       return Math.max(total - err, 0);
     };
 
     const stagedBatches = filteredBatches
-      .filter((b) => b.status === 'STAGED')
+      .filter((b) => b.status === 'STAGED' || b.status === 'PROCESSED')
       .map((b) => {
         const valid = getBatchValidRows(b);
         const err = getBatchErrorRows(b);
@@ -114,7 +100,7 @@ export const DashboardPage: React.FC = () => {
           totalRows: b.totalRows || (valid + err),
         };
       });
-    const uploadedBatches = filteredBatches.filter((b) => b.status === 'UPLOADED');
+    const uploadedBatches = filteredBatches.filter((b) => b.status === 'UPLOADED' || b.status === 'RECEIVED');
 
     // 2. Batches with Errors or Rejected
     const errorBatches = filteredBatches

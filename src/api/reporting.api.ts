@@ -20,13 +20,15 @@ export const reportingApi = {
 
   createManualAggregation: (data: {
     reportCode: string;
-    dataPeriodCode: string;
-    batchIds: string[];
+    dataPeriodId: number;
+    fromDate: string;
+    toDate: string;
+    sourceBatchIds: string[];
   }) => apiClient.post<any, ReportAggregation>('/report-aggregations', data),
 
   createAutomaticAggregation: (data: {
     reportCode: string;
-    dataPeriodCode: string;
+    dataPeriodId: number;
   }) => apiClient.post<any, ReportAggregation>('/report-aggregations/auto', data),
 
   startAggregation: (id: string) =>
@@ -73,8 +75,10 @@ export const reportingApi = {
 
   createCicReportVersion: (data: {
     reportCode: string;
-    dataPeriodCode: string;
+    dataPeriodId: number;
     aggregationId: string;
+    versionNumber: number;
+    reportingDate: string;
   }) => apiClient.post<any, CicReportVersion>('/cic-report-versions', data),
 
   approveCicReportVersion: (id: string) =>

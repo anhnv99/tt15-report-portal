@@ -71,6 +71,9 @@ export const ReportsPage: React.FC = () => {
   const [generatingArtifact, setGeneratingArtifact] = useState(false);
   const [artifactsLoading, setArtifactsLoading] = useState(false);
 
+  // Tabs State
+  const [activeTab, setActiveTab] = useState<string>('versions');
+
   // Manual Aggregation Modal State
   const [manualAggModalOpen, setManualAggModalOpen] = useState(false);
   const [approvedBatches, setApprovedBatches] = useState<ImportBatch[]>([]);
@@ -137,11 +140,16 @@ export const ReportsPage: React.FC = () => {
       message.warning('Vui lòng chọn Biểu mẫu và Kỳ dữ liệu');
       return;
     }
+    const periodObj = periods.find((p) => p.code === selectedPeriod);
+    if (!periodObj) {
+      message.warning('Không tìm thấy thông tin kỳ dữ liệu được chọn');
+      return;
+    }
     try {
       setLoading(true);
       await reportingApi.createAutomaticAggregation({
         reportCode: selectedTemplate,
-        dataPeriodCode: selectedPeriod,
+        dataPeriodId: periodObj.id,
       });
       message.success('Đã khởi tạo quy trình tổng hợp tự động thành công!');
       loadReportData();
@@ -181,12 +189,19 @@ export const ReportsPage: React.FC = () => {
       message.warning('Vui lòng chọn ít nhất một lô nguồn đã duyệt');
       return;
     }
+    const periodObj = periods.find((p) => p.code === selectedPeriod);
+    if (!periodObj) {
+      message.warning('Không tìm thấy thông tin kỳ dữ liệu được chọn');
+      return;
+    }
     try {
       setSubmittingManualAgg(true);
       await reportingApi.createManualAggregation({
         reportCode: selectedTemplate,
-        dataPeriodCode: selectedPeriod,
-        batchIds: selectedBatchIds,
+        dataPeriodId: periodObj.id,
+        fromDate: periodObj.startDate,
+        toDate: periodObj.endDate,
+        sourceBatchIds: selectedBatchIds,
       });
       message.success('Đã khởi tạo đợt tổng hợp thủ công thành công!');
       setManualAggModalOpen(false);
@@ -195,6 +210,29 @@ export const ReportsPage: React.FC = () => {
       console.error(err);
     } finally {
       setSubmittingManualAgg(false);
+    }
+  };
+
+  // Create CIC Report Version from Completed Aggregation
+  const handleCreateVersionFromAggregation = async (agg: ReportAggregation) => {
+    const periodObj = periods.find((p) => p.code === agg.dataPeriodCode) || periods[0];
+    const nextVersion = versions.filter((v) => v.reportCode === agg.reportCode).length + 1;
+    try {
+      setLoading(true);
+      await reportingApi.createCicReportVersion({
+        reportCode: agg.reportCode,
+        dataPeriodId: periodObj ? periodObj.id : (agg as any).dataPeriodId,
+        aggregationId: agg.id,
+        versionNumber: nextVersion,
+        reportingDate: periodObj ? periodObj.endDate : new Date().toISOString().slice(0, 10),
+      });
+      message.success(`Đã tạo thành công Phiên bản Báo cáo v${nextVersion}!`);
+      await loadReportData();
+      setActiveTab('versions');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -310,11 +348,12 @@ export const ReportsPage: React.FC = () => {
     if (!selectedVersion) return;
     try {
       setGeneratingArtifact(true);
+      const formattedDate = (selectedVersion.reportingDate || new Date().toISOString().slice(0, 10)).replace(/[^0-9]/g, '');
       await reportingApi.generateArtifacts({
         reportCode: selectedTemplate,
         aggregationId: selectedVersion.aggregationId,
         reportingUnitCode: '79301001',
-        reportingDate: selectedVersion.reportingDate || new Date().toISOString().slice(0, 10),
+        reportingDate: formattedDate,
         reporterName: 'He thong tu dong',
         reporterPhone: '0901234567',
         reporterEmail: 'admin@bank.com',
@@ -383,11 +422,21 @@ export const ReportsPage: React.FC = () => {
                 showSearch
                 optionFilterProp="children"
               >
-                {templates.map((t) => (
-                  <Select.Option key={t.reportCode} value={t.reportCode}>
-                    <Text strong style={{ color: '#003B95' }}>[{t.reportCode}]</Text> Mẫu {t.templateNumber} - {t.reportName}
-                  </Select.Option>
-                ))}
+                {templates.map((t) => {
+                  const dest = (t.targetDestination || 'CIC').toUpperCase();
+                  const destColor = dest === 'PCB' ? 'purple' : dest === 'SVB' || dest === 'SBV' ? 'green' : 'blue';
+                  return (
+                    <Select.Option key={t.reportCode} value={t.reportCode}>
+                      <Space>
+                        <Tag color={destColor} style={{ fontWeight: 600, fontSize: 11, margin: 0 }}>
+                          {dest}
+                        </Tag>
+                        <Text strong style={{ color: '#003B95' }}>[{t.reportCode}]</Text>
+                        <span>Mẫu {t.templateNumber} - {t.reportName}</span>
+                      </Space>
+                    </Select.Option>
+                  );
+                })}
               </Select>
 
               <Select
@@ -410,7 +459,8 @@ export const ReportsPage: React.FC = () => {
       {/* Main Tabs Container */}
       <Card style={{ borderRadius: 8 }} bodyStyle={{ padding: '16px 24px' }}>
         <Tabs
-          defaultActiveKey="versions"
+          activeKey={activeTab}
+          onChange={setActiveTab}
           items={[
             {
               key: 'versions',
@@ -456,6 +506,7 @@ export const ReportsPage: React.FC = () => {
                   onRunRulesCheck={handleRunRulesCheck}
                   onOpenLineage={handleOpenLineage}
                   onOpenValidation={handleOpenValidation}
+                  onCreateVersion={handleCreateVersionFromAggregation}
                 />
               ),
             },

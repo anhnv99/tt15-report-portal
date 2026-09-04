@@ -7,7 +7,7 @@ import {
   ThunderboltOutlined,
   ApartmentOutlined,
 } from '@ant-design/icons';
-import { ShieldCheck, Eye, GitBranch } from 'lucide-react';
+import { ShieldCheck, Eye, GitBranch, FilePlus } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { ReportAggregation } from '@/types';
 
@@ -21,6 +21,7 @@ interface ReportAggregationsTabProps {
   onRunRulesCheck: (aggId: string) => Promise<void>;
   onOpenLineage: (aggId: string) => void;
   onOpenValidation: (aggId: string) => void;
+  onCreateVersion?: (agg: ReportAggregation) => void;
 }
 
 export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
@@ -31,6 +32,7 @@ export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
   onRunRulesCheck,
   onOpenLineage,
   onOpenValidation,
+  onCreateVersion,
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -139,6 +141,19 @@ export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             />
           </Tooltip>
+
+          {r.status === 'COMPLETED' && onCreateVersion && (
+            <Tooltip title="Tạo Phiên Bản Báo Cáo CIC Từ Đợt Tổng Hợp Này">
+              <Button
+                type="primary"
+                shape="circle"
+                size="small"
+                icon={<FilePlus size={14} />}
+                style={{ background: '#10B981', borderColor: '#10B981', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => onCreateVersion(r)}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },

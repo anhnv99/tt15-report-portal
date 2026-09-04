@@ -66,6 +66,7 @@ export interface ReportTemplate {
   active?: boolean;
   isActive?: boolean;
   version?: number;
+  targetDestination?: 'CIC' | 'SBV' | 'PCB' | string;
 }
 
 export interface ReportTemplateField {
@@ -88,7 +89,15 @@ export interface ReportTemplateRule {
 }
 
 // Import Batches
-export type ImportBatchStatus = 'UPLOADED' | 'STAGED' | 'APPROVED' | 'REJECTED';
+export type ImportBatchStatus =
+  | 'RECEIVED'
+  | 'UPLOADED'
+  | 'STAGED'
+  | 'PROCESSING'
+  | 'FAILED'
+  | 'PROCESSED'
+  | 'APPROVED'
+  | 'REJECTED';
 
 export interface ImportBatch {
   id: string;

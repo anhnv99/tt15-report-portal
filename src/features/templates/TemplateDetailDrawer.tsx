@@ -111,7 +111,25 @@ export const TemplateDetailDrawer: React.FC<TemplateDetailDrawerProps> = ({
 
   return (
     <Drawer
-      title={`Cấu hình Biểu Mẫu: ${template?.reportCode || ''} — ${template?.reportName || ''}`}
+      title={
+        <Space>
+          <Tag
+            color={
+              template?.targetDestination === 'PCB'
+                ? 'purple'
+                : template?.targetDestination === 'SVB' || template?.targetDestination === 'SBV'
+                ? 'green'
+                : 'blue'
+            }
+            style={{ fontWeight: 600 }}
+          >
+            {template?.targetDestination || 'CIC'}
+          </Tag>
+          <span>
+            {template?.reportCode || ''} — {template?.reportName || ''}
+          </span>
+        </Space>
+      }
       placement="right"
       width={980}
       onClose={onClose}

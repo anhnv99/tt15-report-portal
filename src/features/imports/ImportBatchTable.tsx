@@ -22,6 +22,7 @@ import {
   DatabaseOutlined,
   SafetyCertificateOutlined,
   PlusCircleOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import {
   Play,
@@ -40,6 +41,7 @@ interface ImportBatchTableProps {
   batches: ImportBatch[];
   loading: boolean;
   onStage: (batchId: string) => Promise<void>;
+  onRunEtl?: (batchId: string) => Promise<void>;
   onApprove: (batchId: string) => Promise<void>;
   onOpenReject: (batchId: string) => void;
   onOpenStaging: (batch: ImportBatch) => void;
@@ -52,6 +54,7 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
   batches,
   loading,
   onStage,
+  onRunEtl,
   onApprove,
   onOpenReject,
   onOpenStaging,
@@ -61,18 +64,25 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
 }) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusTag = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return 'success';
+        return <Tag color="success">ĐÃ DUYỆT</Tag>;
+      case 'PROCESSED':
+        return <Tag color="cyan">CHỜ DUYỆT (ETL XONG)</Tag>;
+      case 'PROCESSING':
+        return <Tag color="processing">ĐANG CHẠY ETL</Tag>;
       case 'STAGED':
-        return 'processing';
-      case 'REJECTED':
-        return 'error';
+        return <Tag color="purple">ĐÃ TIỀN XỬ LÝ</Tag>;
+      case 'RECEIVED':
       case 'UPLOADED':
-      case 'PENDING':
+        return <Tag color="warning">CHỜ TIỀN XỬ LÝ</Tag>;
+      case 'FAILED':
+        return <Tag color="error">LỖI ETL</Tag>;
+      case 'REJECTED':
+        return <Tag color="error">TỪ CHỐI</Tag>;
       default:
-        return 'warning';
+        return <Tag>{status}</Tag>;
     }
   };
 
@@ -135,8 +145,8 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       title: 'Trạng Thái',
       dataIndex: 'status',
       key: 'status',
-      width: 130,
-      render: (s: string) => <Tag color={getStatusColor(s)}>{s}</Tag>,
+      width: 150,
+      render: (s: string) => getStatusTag(s),
     },
     {
       title: 'Chất Lượng Dữ Liệu (Data Health)',
@@ -151,8 +161,11 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
           if (r.status === 'APPROVED') {
             return <Tag color="green">Đã duyệt (Lô mẫu)</Tag>;
           }
-          if (r.status === 'UPLOADED') {
+          if (r.status === 'UPLOADED' || r.status === 'RECEIVED') {
             return <Tag color="orange">Chờ tiền xử lý (Stage)</Tag>;
+          }
+          if (r.status === 'STAGED') {
+            return <Tag color="purple">Sẵn sàng chạy ETL</Tag>;
           }
           return <Text type="secondary">Chưa có dữ liệu dòng</Text>;
         }
@@ -200,11 +213,11 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
     {
       title: 'Thao Tác',
       key: 'actions',
-      width: 210,
+      width: 220,
       fixed: 'right' as const,
       render: (_, r) => (
         <Space size={6}>
-          {r.status === 'UPLOADED' && (
+          {(r.status === 'UPLOADED' || r.status === 'RECEIVED') && (
             <Tooltip title="Chạy tiền xử lý dữ liệu (Staging)">
               <Button
                 type="primary"
@@ -217,7 +230,33 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
             </Tooltip>
           )}
 
-          {r.status === 'STAGED' && (
+          {r.status === 'STAGED' && onRunEtl && (
+            <Tooltip title="Chạy chuyển đổi ETL dữ liệu (Sang Staging)">
+              <Button
+                type="primary"
+                shape="circle"
+                size="small"
+                icon={<ThunderboltOutlined style={{ fontSize: 13 }} />}
+                style={{ background: '#722ED1', borderColor: '#722ED1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => onRunEtl(r.id)}
+              />
+            </Tooltip>
+          )}
+
+          {r.status === 'FAILED' && onRunEtl && (
+            <Tooltip title={`Lỗi ETL: ${r.rejectionReason || 'Thất bại'}. Bấm để thử lại`}>
+              <Button
+                danger
+                shape="circle"
+                size="small"
+                icon={<Play size={14} />}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => onRunEtl(r.id)}
+              />
+            </Tooltip>
+          )}
+
+          {r.status === 'PROCESSED' && (
             <>
               <Tooltip title="Phê duyệt đợt dữ liệu này">
                 <Popconfirm

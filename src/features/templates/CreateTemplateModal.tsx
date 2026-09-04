@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Switch, Row, Col, Alert, Typography } from 'antd';
+import { Modal, Form, Input, Select, Switch, Row, Col, Alert, Typography, Tag, Space } from 'antd';
 import { FileAddOutlined } from '@ant-design/icons';
 import { catalogApi } from '@/api/catalog.api';
 import type { DataPeriodType } from '@/types';
@@ -28,8 +28,9 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     if (open) {
       form.resetFields();
       form.setFieldsValue({
+        targetDestination: 'CIC',
         frequency: 'MONTHLY',
-        sourceReference: 'Quyết định 573/QĐ-NHNN & Thông tư 15/2026/TT-NHNN',
+        sourceReference: 'Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN',
         rootStructure: JSON.stringify(
           {
             MA_DON_VI: '79301001',
@@ -46,6 +47,16 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       loadPeriodTypes();
     }
   }, [open, form]);
+
+  const handleTargetDestinationChange = (dest: string) => {
+    if (dest === 'CIC') {
+      form.setFieldValue('sourceReference', 'Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN');
+    } else if (dest === 'SVB') {
+      form.setFieldValue('sourceReference', 'Thông tư 35/2015/TT-NHNN & Thông tư 41/2016/TT-NHNN');
+    } else if (dest === 'PCB') {
+      form.setFieldValue('sourceReference', 'Nghị định 58/2021/NĐ-CP & Quy chuẩn dữ liệu PCB');
+    }
+  };
 
   const loadPeriodTypes = async () => {
     try {
@@ -117,13 +128,54 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
+              name="targetDestination"
+              label="Đơn Vị Tiếp Nhận Báo Cáo (Cơ quan đích)"
+              rules={[{ required: true, message: 'Vui lòng chọn cơ quan tiếp nhận' }]}
+              extra="Quy định cổng nộp và định dạng xuất file tương ứng"
+            >
+              <Select
+                onChange={handleTargetDestinationChange}
+                options={[
+                  {
+                    value: 'CIC',
+                    label: (
+                      <Space>
+                        <Tag color="blue" style={{ fontWeight: 600 }}>CIC</Tag>
+                        <span>Trung tâm Thông tin Tín dụng Quốc gia (NHNN)</span>
+                      </Space>
+                    ),
+                  },
+                  {
+                    value: 'SVB',
+                    label: (
+                      <Space>
+                        <Tag color="green" style={{ fontWeight: 600 }}>SVB / SBV</Tag>
+                        <span>Cổng Giám sát Ngân hàng Nhà nước</span>
+                      </Space>
+                    ),
+                  },
+                  {
+                    value: 'PCB',
+                    label: (
+                      <Space>
+                        <Tag color="purple" style={{ fontWeight: 600 }}>PCB</Tag>
+                        <span>Công ty Thông tin Tín dụng Việt Nam</span>
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
               name="reportCode"
               label="Mã Biểu Mẫu"
               rules={[
-                { required: true, message: 'Vui lòng nhập mã biểu mẫu (vd: D10, D31)' },
+                { required: true, message: 'Vui lòng nhập mã biểu mẫu (vd: D10, D31, PCB_01)' },
                 { pattern: /^[A-Za-z0-9_-]+$/, message: 'Mã chỉ chứa chữ hoa, số và gạch ngang' },
               ]}
-              extra="Ví dụ: D10, D11, D31, D99"
+              extra="Ví dụ: D10, D31, D99, PCB_01, B01"
             >
               <Input
                 placeholder="VD: D99"
@@ -132,14 +184,27 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               />
             </Form.Item>
           </Col>
+        </Row>
+
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               name="templateNumber"
-              label="Mẫu Số (Quy chuẩn QĐ 573)"
+              label="Mẫu Số Quy Chuẩn"
               rules={[{ required: true, message: 'Vui lòng nhập mẫu số' }]}
-              extra="Ví dụ: 01, 04, 14, 15"
+              extra="Ví dụ: 01, 04, 14 hoặc mã phân hệ"
             >
               <Input placeholder="VD: 14" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="filePrefix"
+              label="Tiền Tố File Đóng Gói"
+              rules={[{ required: true, message: 'Vui lòng nhập tiền tố file' }]}
+              extra="Ví dụ: D10, D31, PCB"
+            >
+              <Input placeholder="VD: D99" />
             </Form.Item>
           </Col>
         </Row>
@@ -191,12 +256,11 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="filePrefix"
-              label="Tiền Tố File Đóng Gói"
-              rules={[{ required: true, message: 'Vui lòng nhập tiền tố file' }]}
-              extra="Ví dụ: D10, D31, D99"
+              name="sourceReference"
+              label="Căn Cứ / Nguồn Tham Chiếu Pháp Lý"
+              rules={[{ required: true, message: 'Vui lòng nhập căn cứ' }]}
             >
-              <Input placeholder="VD: D99" />
+              <Input placeholder="VD: Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -210,14 +274,6 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             </Form.Item>
           </Col>
         </Row>
-
-        <Form.Item
-          name="sourceReference"
-          label="Căn Cứ / Nguồn Tham Chiếu Pháp Lý"
-          rules={[{ required: true, message: 'Vui lòng nhập căn cứ' }]}
-        >
-          <Input placeholder="VD: Quyết định 573/QĐ-NHNN & Thông tư 15/2026/TT-NHNN" />
-        </Form.Item>
 
         <Form.Item
           name="rootStructure"

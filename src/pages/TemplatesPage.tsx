@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Row, Col, Typography, Space, Segmented, Button, message } from 'antd';
 import { TableOutlined, CodeOutlined, SyncOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { catalogApi } from '@/api/catalog.api';
@@ -14,6 +14,7 @@ const { Title, Text } = Typography;
 export const TemplatesPage: React.FC = () => {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filterDest, setFilterDest] = useState<string>('ALL');
 
   // View Mode: 'list' vs 'json-preview'
   const [viewMode, setViewMode] = useState<string>('list');
@@ -171,21 +172,38 @@ export const TemplatesPage: React.FC = () => {
     }
   };
 
+  const filteredTemplates = useMemo(() => {
+    if (filterDest === 'ALL') return templates;
+    return templates.filter((t) => (t.targetDestination || 'CIC').toUpperCase() === filterDest);
+  }, [templates, filterDest]);
+
   return (
     <div>
       {/* Header Bar */}
       <Card style={{ marginBottom: 16, borderRadius: 8 }}>
         <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col xs={24} md={12}>
+          <Col xs={24} md={10}>
             <Title level={4} style={{ margin: 0, color: '#002B66' }}>
               Cấu Hình Biểu Mẫu Báo Cáo & Bộ Quy Tắc Đối Soát (Rule Engine)
             </Title>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              Quản lý danh mục 13 biểu mẫu chính thức theo QĐ 573/NHNN & TT15, quy cách đóng gói JSON Phụ lục II và bộ quy tắc kiểm tra dữ liệu.
+              Hỗ trợ phân loại đa cơ quan: CIC (TTTD Quốc gia), SVB (Ngân hàng Nhà nước), PCB (Thông tin tín dụng VN).
             </Text>
           </Col>
-          <Col xs={24} md={12} style={{ textAlign: 'right' }}>
+          <Col xs={24} md={14} style={{ textAlign: 'right' }}>
             <Space wrap>
+              {viewMode === 'list' && (
+                <Segmented
+                  value={filterDest}
+                  onChange={(val) => setFilterDest(val as string)}
+                  options={[
+                    { label: `Tất cả (${templates.length})`, value: 'ALL' },
+                    { label: '🔵 CIC', value: 'CIC' },
+                    { label: '🟢 SVB', value: 'SVB' },
+                    { label: '🟣 PCB', value: 'PCB' },
+                  ]}
+                />
+              )}
               <Segmented
                 value={viewMode}
                 onChange={(val) => setViewMode(val as string)}
@@ -194,7 +212,7 @@ export const TemplatesPage: React.FC = () => {
                     label: (
                       <Space>
                         <TableOutlined />
-                        <span>Bảng Danh Sách ({templates.length})</span>
+                        <span>Danh Sách</span>
                       </Space>
                     ),
                     value: 'list',
@@ -203,7 +221,7 @@ export const TemplatesPage: React.FC = () => {
                     label: (
                       <Space>
                         <CodeOutlined />
-                        <span>Mẫu JSON Preview (Phụ Lục II)</span>
+                        <span>JSON Phụ Lục</span>
                       </Space>
                     ),
                     value: 'json-preview',
@@ -229,7 +247,7 @@ export const TemplatesPage: React.FC = () => {
       {/* Mode 1: Table List */}
       {viewMode === 'list' && (
         <TemplateListView
-          templates={templates}
+          templates={filteredTemplates}
           loading={loading}
           onOpenDetail={handleOpenDetail}
           onToggleActive={handleToggleActive}

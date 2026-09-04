@@ -38,6 +38,17 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
       render: (num) => <Tag color="blue">Mẫu {num || '01'}</Tag>,
     },
     {
+      title: 'Đích Nộp (Target)',
+      dataIndex: 'targetDestination',
+      key: 'targetDestination',
+      width: 130,
+      render: (dest) => {
+        const d = (dest || 'CIC').toUpperCase();
+        const color = d === 'CIC' ? 'blue' : d === 'SBV' || d === 'SVB' ? 'green' : 'purple';
+        return <Tag color={color} style={{ fontWeight: 600 }}>{d}</Tag>;
+      },
+    },
+    {
       title: 'Tên Biểu Mẫu Báo Cáo',
       dataIndex: 'reportName',
       key: 'reportName',
