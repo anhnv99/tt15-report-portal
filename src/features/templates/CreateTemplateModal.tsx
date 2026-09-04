@@ -84,11 +84,22 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   };
 
   const handleReportCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const code = e.target.value.toUpperCase();
+    const code = e.target.value.toUpperCase().trim();
     form.setFieldValue('reportCode', code);
-    if (!form.getFieldValue('filePrefix')) {
-      form.setFieldValue('filePrefix', code);
+    form.setFieldValue('filePrefix', code);
+
+    // Tự động nhận diện cơ quan đích và căn cứ pháp lý theo quy chuẩn đặt tên
+    if (code.startsWith('PCB')) {
+      form.setFieldValue('targetDestination', 'PCB');
+      form.setFieldValue('sourceReference', 'Nghị định 58/2021/NĐ-CP & Quy chuẩn dữ liệu PCB');
+    } else if (code.startsWith('B') || code.startsWith('BC') || code.startsWith('CAR') || code.startsWith('TK')) {
+      form.setFieldValue('targetDestination', 'SVB');
+      form.setFieldValue('sourceReference', 'Thông tư 35/2015/TT-NHNN & Thông tư 41/2016/TT-NHNN');
+    } else if (code.startsWith('D')) {
+      form.setFieldValue('targetDestination', 'CIC');
+      form.setFieldValue('sourceReference', 'Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN');
     }
+
     // Auto update default json
     try {
       const currentJson = JSON.parse(form.getFieldValue('rootStructure') || '{}');
@@ -117,8 +128,8 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       destroyOnClose
     >
       <Alert
-        message="Định Nghĩa Mẫu Biểu Quy Chuẩn"
-        description="Mẫu biểu được tạo sẽ hỗ trợ nhập liệu, tổng hợp dữ liệu, đóng gói cấu trúc JSON Phụ lục II và chạy các bộ quy tắc kiểm tra đối soát."
+        message="Quy Chuẩn Đặt Tên & Nhận Diện Tự Động"
+        description="Hệ thống tự động nhận diện cơ quan đích theo tiền tố: D* → CIC (QĐ 573 / TT15); B*/CAR* → SVB (NHNN); PCB* → PCB. Bảng staging BI ETL tuân thủ quy tắc: tempo_{mã}_{phân_đoạn} kèm 4 cột điều khiển (pk_id, kdl_id, version, rpt_cd)."
         type="info"
         showIcon
         style={{ marginBottom: 20 }}
