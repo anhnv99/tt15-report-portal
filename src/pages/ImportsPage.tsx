@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Typography, Space, Button, Select, Input, message, Tabs } from 'antd';
-import { CloudUploadOutlined, SyncOutlined, DatabaseOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Typography, Space, Button, Select, Input, message } from 'antd';
+import { CloudUploadOutlined, SyncOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { importApi } from '@/api/import.api';
 import { catalogApi } from '@/api/catalog.api';
@@ -11,13 +11,11 @@ import { StagedDataDrawer } from '@/features/imports/StagedDataDrawer';
 import { ImportTimelineDrawer } from '@/features/imports/ImportTimelineDrawer';
 import { ImportRejectModal } from '@/features/imports/ImportRejectModal';
 import { SupplementBatchModal } from '@/features/imports/SupplementBatchModal';
-import { TempoStagingTablesView } from '@/features/imports/TempoStagingTablesView';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
 
 export const ImportsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('batches');
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [periods, setPeriods] = useState<DataPeriod[]>([]);
@@ -202,24 +200,22 @@ export const ImportsPage: React.FC = () => {
         <Row justify="space-between" align="middle" gutter={[16, 16]}>
           <Col xs={24} md={14}>
             <Title level={4} style={{ margin: 0, color: '#002B66' }}>
-              Quản Lý Dữ Liệu Nguồn & Bảng Staging (Dual-Channel Ingestion)
+              Quản Lý & Phê Duyệt Lô Dữ Liệu Nguồn (Maker / Checker)
             </Title>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              Hỗ trợ song song 2 kênh nạp: Tự động qua BI ETL Pipeline (`tempo_***`) và Tải lên tệp Excel/CSV thủ công.
+              Tiếp nhận, tiền xử lý và phê duyệt các lô dữ liệu nạp trước khi đưa vào tổng hợp báo cáo.
             </Text>
           </Col>
           <Col xs={24} md={10} style={{ textAlign: 'right' }}>
             <Space wrap>
-              {activeTab === 'batches' && (
-                <Button
-                  type="primary"
-                  icon={<CloudUploadOutlined />}
-                  style={{ background: '#003B95' }}
-                  onClick={() => setUploadModalOpen(true)}
-                >
-                  Tải Lên File Excel
-                </Button>
-              )}
+              <Button
+                type="primary"
+                icon={<CloudUploadOutlined />}
+                style={{ background: '#003B95' }}
+                onClick={() => setUploadModalOpen(true)}
+              >
+                Tải Lên File Excel
+              </Button>
               <Button icon={<SyncOutlined />} onClick={loadBatches}>
                 Làm mới
               </Button>
@@ -228,100 +224,70 @@ export const ImportsPage: React.FC = () => {
         </Row>
       </Card>
 
-      {/* Tabs Navigation */}
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        type="card"
-        style={{ marginBottom: 16 }}
-        items={[
-          {
-            key: 'batches',
-            label: (
-              <span>
-                <FileExcelOutlined /> Lô Dữ Liệu Nạp (Maker / Checker)
-              </span>
-            ),
-            children: (
-              <div>
-                {/* Filters Card */}
-                <Card style={{ marginBottom: 16, borderRadius: 8 }} styles={{ body: { padding: '12px 24px' } }}>
-                  <Row gutter={16} align="middle">
-                    <Col xs={24} sm={8} md={6}>
-                      <Select
-                        allowClear
-                        placeholder="Lọc theo biểu mẫu"
-                        style={{ width: '100%' }}
-                        value={filterType}
-                        onChange={setFilterType}
-                        showSearch
-                        optionFilterProp="children"
-                      >
-                        {templates.map((t) => (
-                          <Select.Option key={t.reportCode} value={t.reportCode}>
-                            [{t.reportCode}] Mẫu {t.templateNumber} - {t.reportName}
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </Col>
-                    <Col xs={24} sm={8} md={6}>
-                      <Select
-                        allowClear
-                        placeholder="Lọc theo trạng thái"
-                        style={{ width: '100%' }}
-                        value={filterStatus}
-                        onChange={setFilterStatus}
-                      >
-                        <Select.Option value="UPLOADED">UPLOADED (Mới tải lên)</Select.Option>
-                        <Select.Option value="STAGED">STAGED (Đã tiền xử lý)</Select.Option>
-                        <Select.Option value="APPROVED">APPROVED (Đã duyệt)</Select.Option>
-                        <Select.Option value="REJECTED">REJECTED (Từ chối)</Select.Option>
-                      </Select>
-                    </Col>
-                    <Col xs={24} sm={8} md={8}>
-                      <Search
-                        placeholder="Tìm kiếm theo tên file..."
-                        allowClear
-                        onSearch={setSearchQuery}
-                      />
-                    </Col>
-                  </Row>
-                </Card>
+      {/* Filters Card */}
+      <Card style={{ marginBottom: 16, borderRadius: 8 }} styles={{ body: { padding: '12px 24px' } }}>
+        <Row gutter={16} align="middle">
+          <Col xs={24} sm={8} md={6}>
+            <Select
+              allowClear
+              placeholder="Lọc theo biểu mẫu"
+              style={{ width: '100%' }}
+              value={filterType}
+              onChange={setFilterType}
+              showSearch
+              optionFilterProp="children"
+            >
+              {templates.map((t) => (
+                <Select.Option key={t.reportCode} value={t.reportCode}>
+                  [{t.reportCode}] Mẫu {t.templateNumber} - {t.reportName}
+                </Select.Option>
+              ))}
+            </Select>
+          </Col>
+          <Col xs={24} sm={8} md={6}>
+            <Select
+              allowClear
+              placeholder="Lọc theo trạng thái"
+              style={{ width: '100%' }}
+              value={filterStatus}
+              onChange={setFilterStatus}
+            >
+              <Select.Option value="UPLOADED">UPLOADED (Mới tải lên)</Select.Option>
+              <Select.Option value="STAGED">STAGED (Đã tiền xử lý)</Select.Option>
+              <Select.Option value="APPROVED">APPROVED (Đã duyệt)</Select.Option>
+              <Select.Option value="REJECTED">REJECTED (Từ chối)</Select.Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={8} md={8}>
+            <Search
+              placeholder="Tìm kiếm theo tên file hoặc mã lô..."
+              allowClear
+              onSearch={setSearchQuery}
+            />
+          </Col>
+        </Row>
+      </Card>
 
-                {/* Batch Table */}
-                <Card style={{ borderRadius: 8 }} styles={{ body: { padding: '16px 24px' } }}>
-                  <ImportBatchTable
-                    batches={batches}
-                    loading={loading}
-                    onStage={handleStage}
-                    onApprove={handleApprove}
-                    onBulkApprove={handleBulkApprove}
-                    onOpenReject={(id) => {
-                      setRejectBatchId(id);
-                      setRejectModalOpen(true);
-                    }}
-                    onOpenStaging={handleOpenStaging}
-                    onOpenTimeline={handleOpenTimeline}
-                    onOpenSupplement={(batch) => {
-                      setSupplementBatch(batch);
-                      setSupplementModalOpen(true);
-                    }}
-                  />
-                </Card>
-              </div>
-            ),
-          },
-          {
-            key: 'tempo',
-            label: (
-              <span>
-                <DatabaseOutlined /> Bảng Staging BI (`tempo_***`)
-              </span>
-            ),
-            children: <TempoStagingTablesView />,
-          },
-        ]}
-      />
+      {/* Batch Table */}
+      <Card style={{ borderRadius: 8 }} styles={{ body: { padding: '16px 24px' } }}>
+        <ImportBatchTable
+          batches={batches}
+          loading={loading}
+          onStage={handleStage}
+          onApprove={handleApprove}
+          onBulkApprove={handleBulkApprove}
+          onOpenReject={(id) => {
+            setRejectBatchId(id);
+            setRejectModalOpen(true);
+          }}
+          onOpenStaging={handleOpenStaging}
+          onOpenTimeline={handleOpenTimeline}
+          onOpenSupplement={(batch) => {
+            setSupplementBatch(batch);
+            setSupplementModalOpen(true);
+          }}
+        />
+      </Card>
 
       {/* Supplement Batch Modal */}
       <SupplementBatchModal
