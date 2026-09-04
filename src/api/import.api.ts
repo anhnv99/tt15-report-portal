@@ -58,4 +58,14 @@ export const importApi = {
         'Content-Type': 'multipart/form-data',
       },
     }),
+
+  getTempoTables: async (): Promise<{ tableName: string; rowCount: number }[]> => {
+    const res = await apiClient.get<any, { tableName: string; rowCount: number }[]>('/tempo-data/tables');
+    return Array.isArray(res) ? res : [];
+  },
+
+  previewTempoTable: async (params: { tableName: string; kdlId?: number; version?: number; limit?: number }): Promise<any[]> => {
+    const res = await apiClient.get<any, any[]>('/tempo-data/preview', { params });
+    return Array.isArray(res) ? res : [];
+  },
 };

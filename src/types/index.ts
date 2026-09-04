@@ -99,6 +99,7 @@ export interface ImportBatch {
   dataPeriodCode?: string;
   originalFileName: string;
   fileSize: number;
+  sourceChannel?: 'MANUAL' | 'ETL' | string;
   status: ImportBatchStatus;
   totalRows: number;
   validRows: number;
@@ -231,6 +232,21 @@ export interface ReportDelivery {
   dispatchedAt?: string;
   acceptedAt?: string;
   deliveredAt?: string;
+}
+
+export interface ReportDeliveryConfig {
+  id?: number;
+  destination: string;
+  name: string;
+  webhookUrl: string;
+  authToken?: string;
+  callbackUrl?: string;
+  callbackToken?: string;
+  isEnabled: boolean;
+  isMock: boolean;
+  timeoutMs: number;
+  description?: string;
+  updatedAt?: string;
 }
 
 // Operations Dashboard

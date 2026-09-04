@@ -1,6 +1,13 @@
 import React, { useMemo } from 'react';
-import { Table, Tag, Button, Space, Typography, Row, Col, Card } from 'antd';
-import { SendOutlined, RedoOutlined, FilterOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Space, Typography, Row, Col, Card, Dropdown } from 'antd';
+import {
+  SendOutlined,
+  RedoOutlined,
+  DownOutlined,
+  BankOutlined,
+  SafetyCertificateOutlined,
+  GlobalOutlined,
+} from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { ReportDelivery, CicReportVersion } from '@/types';
 
@@ -12,7 +19,7 @@ interface ReportDeliveriesTabProps {
   loading: boolean;
   onDispatch: (deliveryId: string) => Promise<void>;
   onRetry: (deliveryId: string) => Promise<void>;
-  onSendApprovedVersion: (version: CicReportVersion) => Promise<void>;
+  onSendApprovedVersion: (version: CicReportVersion, destination?: string) => Promise<void>;
 }
 
 export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
@@ -62,11 +69,16 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
       render: (id) => <Text code strong>{id ? id.substring(0, 8) : '-'}</Text>,
     },
     {
-      title: 'Kênh Truyền Nhận',
-      dataIndex: 'channel',
-      key: 'channel',
-      width: 120,
-      render: (c) => <Tag color="geekblue">{c || 'N8N_GATEWAY'}</Tag>,
+      title: 'Đích Tiếp Nhận',
+      dataIndex: 'destination',
+      key: 'destination',
+      width: 140,
+      render: (dest) => {
+        const d = (dest || 'CIC').toUpperCase();
+        if (d.includes('SVB')) return <Tag color="purple" icon={<SafetyCertificateOutlined />}>SVB (NHNN)</Tag>;
+        if (d.includes('PCB')) return <Tag color="orange" icon={<GlobalOutlined />}>PCB</Tag>;
+        return <Tag color="blue" icon={<BankOutlined />}>CIC (H2H)</Tag>;
+      },
     },
     {
       title: 'Trạng Thái',
@@ -196,16 +208,26 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
             <Col>
               <Space>
                 {pendingApprovedVersions.slice(0, 3).map((v) => (
-                  <Button
+                  <Dropdown
                     key={v.id}
-                    size="small"
-                    type="primary"
-                    icon={<SendOutlined />}
-                    style={{ background: '#16A34A' }}
-                    onClick={() => onSendApprovedVersion(v)}
+                    menu={{
+                      items: [
+                        { key: 'CIC', label: 'Nộp sang CIC (H2H)', icon: <BankOutlined /> },
+                        { key: 'SVB', label: 'Nộp sang SVB (NHNN)', icon: <SafetyCertificateOutlined /> },
+                        { key: 'PCB', label: 'Nộp sang PCB', icon: <GlobalOutlined /> },
+                      ],
+                      onClick: ({ key }) => onSendApprovedVersion(v, key),
+                    }}
                   >
-                    Gửi v{v.versionNumber} ({v.fileName || 'Báo cáo'})
-                  </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<SendOutlined />}
+                      style={{ background: '#16A34A' }}
+                    >
+                      Nộp v{v.versionNumber} ({v.fileName || 'Báo cáo'}) <DownOutlined />
+                    </Button>
+                  </Dropdown>
                 ))}
               </Space>
             </Col>

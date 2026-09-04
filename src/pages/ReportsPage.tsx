@@ -351,10 +351,10 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
-  const handleSendApprovedVersion = async (version: CicReportVersion) => {
+  const handleSendApprovedVersion = async (version: CicReportVersion, destination: string = 'CIC') => {
     try {
-      await reportingApi.dispatchReportDelivery({ reportVersionId: version.id });
-      message.success(`Đã nộp phiên bản v${version.versionNumber} sang luồng truyền nhận CIC!`);
+      await reportingApi.dispatchReportDelivery({ reportVersionId: version.id, destination });
+      message.success(`Đã nộp phiên bản v${version.versionNumber} sang kênh ${destination.toUpperCase()}!`);
       setTimeout(() => loadReportData(), 1000);
     } catch (err) {
       console.error(err);

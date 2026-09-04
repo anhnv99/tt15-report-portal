@@ -7,6 +7,7 @@ import type {
   ReportArtifact,
   ValidationResult,
   ReportDelivery,
+  ReportDeliveryConfig,
 } from '@/types';
 
 export const reportingApi = {
@@ -124,4 +125,14 @@ export const reportingApi = {
 
   retryReportDelivery: (id: string) =>
     apiClient.post<any, ReportDelivery>(`/report-deliveries/${id}/retry`),
+
+  // Report Delivery Configurations (CIC, SVB, PCB)
+  getDeliveryConfigs: () =>
+    apiClient.get<any, ReportDeliveryConfig[]>('/report-delivery-configs'),
+
+  getDeliveryConfig: (destination: string) =>
+    apiClient.get<any, ReportDeliveryConfig>(`/report-delivery-configs/${destination}`),
+
+  updateDeliveryConfig: (destination: string, data: Partial<ReportDeliveryConfig>) =>
+    apiClient.put<any, ReportDeliveryConfig>(`/report-delivery-configs/${destination}`, data),
 };

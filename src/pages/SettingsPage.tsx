@@ -15,15 +15,15 @@ import {
   Alert,
   message,
   Descriptions,
-  Table,
+  Tabs,
   Badge,
+  Spin,
+  Tooltip,
 } from 'antd';
 import {
   ApiOutlined,
   SaveOutlined,
-  CheckCircleOutlined,
   ThunderboltOutlined,
-  SendOutlined,
   KeyOutlined,
   FileZipOutlined,
   FileTextOutlined,
@@ -33,51 +33,105 @@ import {
   UserOutlined,
   PhoneOutlined,
   MailOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons';
+import { reportingApi } from '@/api/reporting.api';
+import type { ReportDeliveryConfig } from '@/types';
 
 const { Title, Text, Paragraph } = Typography;
 
 export const SettingsPage: React.FC = () => {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResponse, setTestResponse] = useState<any>(null);
+  const [configs, setConfigs] = useState<ReportDeliveryConfig[]>([]);
+  const [activeDestination, setActiveDestination] = useState<string>('CIC');
 
-  // Default values
-  const defaultValues = {
-    reportingUnitCode: '79301001',
-    reporterName: 'Pham Maker',
-    reporterPhone: '0901234567',
-    reporterEmail: 'maker@aeon.vn',
-    webhookEnabled: true,
-    webhookUrl: 'https://n8n-staging.aeonfinance.com.vn/webhook/tt15-cic-report-delivery',
-    authHeaderName: 'X-API-KEY',
-    authHeaderValue:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwOGVmY2MwOS1mZmNjLTRiNDktOGE4Zi0yZTYzODJiZTJhMjkiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzg4MzMxNzAwfQ._TjY5RzDgQ7Nk8v27y2aki6q5q2x69UX80-8TU00uko',
-    destinationType: 'N8N_WORKFLOW',
-    callbackUrl: 'http://localhost:8080/api/report-deliveries/callback',
-    timeoutSeconds: 30,
+  // Load configs from Backend Database
+  const fetchConfigs = async () => {
+    setLoading(true);
+    try {
+      const data = await reportingApi.getDeliveryConfigs();
+      if (Array.isArray(data) && data.length > 0) {
+        setConfigs(data);
+        const current = data.find((c) => c.destination.toUpperCase() === activeDestination.toUpperCase()) || data[0];
+        setActiveDestination(current.destination);
+        fillFormValues(current);
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi tải cấu hình từ DB:', err);
+      // Fallback local if server error
+      const local = localStorage.getItem('tt15_webhook_settings');
+      if (local) {
+        try {
+          form.setFieldsValue(JSON.parse(local));
+        } catch {}
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('tt15_webhook_settings');
-    if (saved) {
-      try {
-        form.setFieldsValue(JSON.parse(saved));
-      } catch {
-        form.setFieldsValue(defaultValues);
-      }
-    } else {
-      form.setFieldsValue(defaultValues);
-    }
+    fetchConfigs();
   }, []);
+
+  const fillFormValues = (config: ReportDeliveryConfig) => {
+    form.setFieldsValue({
+      destination: config.destination,
+      name: config.name,
+      webhookUrl: config.webhookUrl,
+      authToken: config.authToken,
+      callbackUrl: config.callbackUrl || 'http://localhost:8080/api/report-deliveries/callback',
+      callbackToken: config.callbackToken || '',
+      isEnabled: config.isEnabled,
+      isMock: config.isMock,
+      timeoutMs: config.timeoutMs || 30000,
+      description: config.description || '',
+    });
+  };
+
+  const handleTabChange = (destKey: string) => {
+    setActiveDestination(destKey);
+    setTestResponse(null);
+    const found = configs.find((c) => c.destination.toUpperCase() === destKey.toUpperCase());
+    if (found) {
+      fillFormValues(found);
+    }
+  };
 
   const handleSaveSettings = async () => {
     try {
       const values = await form.validateFields();
-      localStorage.setItem('tt15_webhook_settings', JSON.stringify(values));
-      message.success('Đã lưu cấu hình khai báo Webhook thành công!');
-    } catch (err) {
-      console.error(err);
+      setSaving(true);
+      const updated = await reportingApi.updateDeliveryConfig(activeDestination, {
+        name: values.name,
+        webhookUrl: values.webhookUrl,
+        authToken: values.authToken,
+        callbackUrl: values.callbackUrl,
+        callbackToken: values.callbackToken,
+        isEnabled: values.isEnabled,
+        isMock: values.isMock,
+        timeoutMs: values.timeoutMs,
+        description: values.description,
+      });
+
+      // Update local state list
+      setConfigs((prev) =>
+        prev.map((c) => (c.destination.toUpperCase() === activeDestination.toUpperCase() ? updated : c))
+      );
+
+      message.success(`Đã lưu cấu hình cổng ${activeDestination} vào Database thành công!`);
+    } catch (err: any) {
+      console.error('Lỗi lưu cấu hình:', err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -91,20 +145,23 @@ export const SettingsPage: React.FC = () => {
       const testPayload = {
         correlationId: `PING-TEST-${Date.now()}`,
         reportVersionId: '00000000-0000-0000-0000-000000000000',
-        reportCode: 'D10',
+        reportCode: activeDestination === 'CIC' ? 'D10' : 'TEST',
         versionNumber: 1,
         reportingDate: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
         callbackUrl: values.callbackUrl,
+        destination: activeDestination,
       };
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (values.authToken) {
+        headers['Authorization'] = `Bearer ${values.authToken}`;
+      }
 
       const res = await fetch(values.webhookUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(values.authHeaderName && values.authHeaderValue
-            ? { [values.authHeaderName]: values.authHeaderValue }
-            : {}),
-        },
+        headers,
         body: JSON.stringify(testPayload),
       });
 
@@ -118,9 +175,9 @@ export const SettingsPage: React.FC = () => {
       });
 
       if (res.status === 202 || res.status === 200) {
-        message.success(`Webhook phản hồi HTTP ${res.status} (${latency}ms) thành công!`);
+        message.success(`Webhook ${activeDestination} phản hồi HTTP ${res.status} (${latency}ms) thành công!`);
       } else {
-        message.warning(`Webhook phản hồi mã HTTP ${res.status}`);
+        message.warning(`Webhook ${activeDestination} phản hồi mã HTTP ${res.status}`);
       }
     } catch (err: any) {
       setTestResponse({
@@ -128,11 +185,13 @@ export const SettingsPage: React.FC = () => {
         latency: 0,
         error: err?.message || 'Không thể gửi request đến Webhook',
       });
-      message.error('Gặp lỗi khi kết nối tới Webhook endpoint');
+      message.error(`Lỗi kết nối tới Webhook endpoint của ${activeDestination}`);
     } finally {
       setTesting(false);
     }
   };
+
+  const currentConfig = configs.find((c) => c.destination.toUpperCase() === activeDestination.toUpperCase());
 
   return (
     <div>
@@ -142,14 +201,18 @@ export const SettingsPage: React.FC = () => {
           <Col>
             <Title level={4} style={{ margin: 0, color: '#002B66' }}>
               <ApiOutlined style={{ marginRight: 8, color: '#003B95' }} />
-              Khai Báo Cổng Webhook Truyền Nhận Báo Cáo (n8n / CIC / SVB)
+              Cấu Hình Cổng Truyền Báo Cáo Ngoại Vi (Database Config)
             </Title>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              Khai báo Endpoint Webhook tiếp nhận báo cáo ngoại vi. Toàn bộ logic xác thực bảo mật và phân luồng được cấu hình độc lập trên workflow n8n.
+              Toàn bộ thông số Webhook, Token, Callback và chế độ Mock được lưu trữ và áp dụng trực tiếp từ bảng{' '}
+              <code>cfg_report_delivery_config</code> trong Database.
             </Text>
           </Col>
           <Col>
             <Space>
+              <Button icon={<ReloadOutlined />} onClick={fetchConfigs} loading={loading}>
+                Làm mới
+              </Button>
               <Button
                 icon={<ThunderboltOutlined />}
                 loading={testing}
@@ -161,10 +224,11 @@ export const SettingsPage: React.FC = () => {
               <Button
                 type="primary"
                 icon={<SaveOutlined />}
+                loading={saving}
                 style={{ background: '#003B95', fontWeight: 600 }}
                 onClick={handleSaveSettings}
               >
-                Lưu Khai Báo
+                Lưu Cấu Hình (Save to DB)
               </Button>
             </Space>
           </Col>
@@ -180,7 +244,7 @@ export const SettingsPage: React.FC = () => {
                 status={testResponse.httpStatus === 202 || testResponse.httpStatus === 200 ? 'success' : 'error'}
                 text={
                   <Text strong>
-                    Phản hồi từ n8n Webhook: HTTP {testResponse.httpStatus} ({testResponse.latency} ms)
+                    Phản hồi từ Webhook {activeDestination}: HTTP {testResponse.httpStatus} ({testResponse.latency} ms)
                   </Text>
                 }
               />
@@ -198,226 +262,233 @@ export const SettingsPage: React.FC = () => {
         />
       )}
 
-      <Row gutter={[16, 16]}>
-        {/* Main Settings Form */}
-        <Col xs={24} lg={15}>
-          <Card title="Cấu Hình Hệ Thống & Khai Báo Vận Hành" style={{ borderRadius: 8 }}>
-            <Form form={form} layout="vertical" initialValues={defaultValues}>
-              <Divider style={{ margin: '0 0 16px 0' }}>
-                <BankOutlined style={{ marginRight: 6, color: '#003B95' }} />
-                Thông Tin Đơn Vị Báo Cáo & Người Lập Biểu (QĐ 573 / TT15)
-              </Divider>
+      {/* Tabs for Each Destination */}
+      <Card style={{ borderRadius: 8 }}>
+        <Tabs
+          activeKey={activeDestination}
+          onChange={handleTabChange}
+          type="card"
+          items={[
+            {
+              key: 'CIC',
+              label: (
+                <span>
+                  <BankOutlined style={{ marginRight: 6 }} />
+                  Cổng CIC (H2H)
+                  {configs.find((c) => c.destination === 'CIC')?.isEnabled ? (
+                    <Tag color="success" style={{ marginLeft: 6 }}>
+                      Active
+                    </Tag>
+                  ) : (
+                    <Tag color="default" style={{ marginLeft: 6 }}>
+                      Off
+                    </Tag>
+                  )}
+                </span>
+              ),
+            },
+            {
+              key: 'SVB',
+              label: (
+                <span>
+                  <SafetyCertificateOutlined style={{ marginRight: 6 }} />
+                  Cổng SVB (NHNN)
+                  {configs.find((c) => c.destination === 'SVB')?.isEnabled ? (
+                    <Tag color="success" style={{ marginLeft: 6 }}>
+                      Active
+                    </Tag>
+                  ) : (
+                    <Tag color="default" style={{ marginLeft: 6 }}>
+                      Off
+                    </Tag>
+                  )}
+                </span>
+              ),
+            },
+            {
+              key: 'PCB',
+              label: (
+                <span>
+                  <GlobalOutlined style={{ marginRight: 6 }} />
+                  Cổng PCB
+                  {configs.find((c) => c.destination === 'PCB')?.isEnabled ? (
+                    <Tag color="success" style={{ marginLeft: 6 }}>
+                      Active
+                    </Tag>
+                  ) : (
+                    <Tag color="default" style={{ marginLeft: 6 }}>
+                      Off
+                    </Tag>
+                  )}
+                </span>
+              ),
+            },
+          ]}
+        />
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="reportingUnitCode"
-                    label="Mã Đơn Vị Báo Cáo (reportingUnitCode)"
-                    rules={[{ required: true, message: 'Vui lòng nhập mã đơn vị' }]}
-                    tooltip="Mã định danh TCTD được Ngân Hàng Nhà Nước / CIC cấp (Ví dụ: 79301001)"
-                  >
-                    <Input
-                      prefix={<IdcardOutlined style={{ color: '#64748B' }} />}
-                      placeholder="79301001"
-                      style={{ fontWeight: 600, color: '#003B95' }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="reporterName"
-                    label="Họ Tên Người Lập Biểu (reporterName)"
-                    rules={[{ required: true, message: 'Vui lòng nhập tên người lập' }]}
-                  >
-                    <Input
-                      prefix={<UserOutlined style={{ color: '#64748B' }} />}
-                      placeholder="Pham Maker"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin tip="Đang tải cấu hình từ máy chủ..." />
+          </div>
+        ) : (
+          <Row gutter={[24, 16]}>
+            {/* Main Form */}
+            <Col xs={24} lg={15}>
+              <Form form={form} layout="vertical">
+                <Row gutter={16}>
+                  <Col span={16}>
+                    <Form.Item
+                      name="name"
+                      label="Tên Cổng Tiếp Nhận"
+                      rules={[{ required: true, message: 'Vui lòng nhập tên cổng' }]}
+                    >
+                      <Input placeholder="Cổng Báo cáo Tín dụng CIC (H2H)" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={4}>
+                    <Form.Item
+                      name="isEnabled"
+                      label="Trạng Thái"
+                      valuePropName="checked"
+                    >
+                      <Switch checkedChildren="BẬT" unCheckedChildren="TẮT" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={4}>
+                    <Form.Item
+                      name="isMock"
+                      label="Chế Độ MOCK"
+                      valuePropName="checked"
+                      tooltip="Khi BẬT, Backend sẽ giả lập phản hồi 202 ngay mà không cần gọi ra n8n/gateway thật."
+                    >
+                      <Switch checkedChildren="MOCK" unCheckedChildren="THẬT" />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="reporterPhone"
-                    label="Số Điện Thoại Liên Hệ (reporterPhone)"
-                  >
-                    <Input
-                      prefix={<PhoneOutlined style={{ color: '#64748B' }} />}
-                      placeholder="0901234567"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="reporterEmail"
-                    label="Email Liên Hệ (reporterEmail)"
-                  >
-                    <Input
-                      prefix={<MailOutlined style={{ color: '#64748B' }} />}
-                      placeholder="maker@aeon.vn"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+                <Form.Item
+                  name="webhookUrl"
+                  label={
+                    <Space>
+                      <span>Địa Chỉ Webhook Endpoint (n8n URL)</span>
+                      <Tooltip title="URL của Webhook trên n8n dành riêng cho cổng này">
+                        <Tag color="blue">{activeDestination}</Tag>
+                      </Tooltip>
+                    </Space>
+                  }
+                  rules={[{ required: true, message: 'Vui lòng nhập Webhook URL' }]}
+                >
+                  <Input
+                    prefix={<LinkOutlined style={{ color: '#64748B' }} />}
+                    placeholder={`http://localhost:5678/webhook/tt15-${activeDestination.toLowerCase()}-report-delivery`}
+                  />
+                </Form.Item>
 
-              <Divider style={{ margin: '16px 0' }}>
-                <ApiOutlined style={{ marginRight: 6, color: '#003B95' }} />
-                Khai Báo Webhook Truyền Nhận (n8n Webhook Endpoint)
-              </Divider>
-
-              <Form.Item
-                name="webhookEnabled"
-                label="Kích hoạt truyền nhận qua Webhook"
-                valuePropName="checked"
-              >
-                <Switch checkedChildren="BẬT" unCheckedChildren="TẮT" />
-              </Form.Item>
-
-              <Form.Item
-                name="webhookUrl"
-                label="Địa chỉ Webhook Endpoint (n8n / CIC Webhook URL)"
-                rules={[{ required: true, message: 'Vui lòng nhập Webhook URL' }]}
-              >
-                <Input
-                  prefix={<LinkOutlined style={{ color: '#64748B' }} />}
-                  placeholder="https://n8n-staging.aeonfinance.com.vn/webhook/tt15-cic-report-delivery"
-                />
-              </Form.Item>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="authHeaderName" label="Header Xác Thực (Tùy chọn)">
-                    <Input placeholder="X-API-KEY / Authorization" />
-                  </Form.Item>
-                </Col>
-                <Col span={16}>
-                  <Form.Item name="authHeaderValue" label="Giá trị Token / Khóa (Tùy chọn)">
-                    <Input.Password
-                      placeholder="Nhập khóa nếu workflow n8n yêu cầu"
-                      prefix={<KeyOutlined style={{ color: '#64748B' }} />}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Divider style={{ margin: '16px 0' }}>Cấu hình Lịch Tự Động (Schedulers & Automation)</Divider>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Card size="small" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', marginBottom: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <Text strong style={{ color: '#003B95' }}>Lịch Tự Động Tổng Hợp</Text>
-                      <Tag color="success">HOẠT ĐỘNG</Tag>
-                    </div>
-                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
-                      Tự động gom các Batch APPROVED và tạo phiên tổng hợp.
-                    </Text>
-                    <Form.Item name="aggregationDelay" label="Chu kỳ quét" style={{ margin: 0 }}>
-                      <Select defaultValue={30000}>
-                        <Select.Option value={30000}>Mỗi 30 giây (Mặc định)</Select.Option>
-                        <Select.Option value={60000}>Mỗi 1 phút</Select.Option>
-                        <Select.Option value={300000}>Mỗi 5 phút</Select.Option>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="authToken"
+                      label="Webhook Bearer Token (Nếu n8n yêu cầu)"
+                    >
+                      <Input.Password
+                        placeholder="Bearer token gửi sang n8n Webhook"
+                        prefix={<KeyOutlined style={{ color: '#64748B' }} />}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="timeoutMs"
+                      label="Thời Gian Chờ Tối Đa (Timeout ms)"
+                    >
+                      <Select>
+                        <Select.Option value={15000}>15 giây (15,000 ms)</Select.Option>
+                        <Select.Option value={30000}>30 giây (30,000 ms)</Select.Option>
+                        <Select.Option value={60000}>60 giây (60,000 ms)</Select.Option>
                       </Select>
                     </Form.Item>
-                  </Card>
-                </Col>
+                  </Col>
+                </Row>
 
-                <Col span={12}>
-                  <Card size="small" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', marginBottom: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <Text strong style={{ color: '#7C3AED' }}>Lịch Tự Động Gửi CIC / SVB</Text>
-                      <Tag color="processing">SẴN SÀNG</Tag>
-                    </div>
-                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
-                      Tự động quét hàng đợi và bắn Webhook các báo cáo APPROVED.
-                    </Text>
-                    <Form.Item name="deliveryDelay" label="Chu kỳ truyền nhận" style={{ margin: 0 }}>
-                      <Select defaultValue={30000}>
-                        <Select.Option value={30000}>Mỗi 30 giây (Mặc định)</Select.Option>
-                        <Select.Option value={60000}>Mỗi 1 phút</Select.Option>
-                        <Select.Option value={300000}>Mỗi 5 phút</Select.Option>
-                      </Select>
+                <Divider style={{ margin: '12px 0 16px 0' }}>Cấu Hình Phản Hồi Trạng Thái (Callback)</Divider>
+
+                <Row gutter={16}>
+                  <Col span={14}>
+                    <Form.Item
+                      name="callbackUrl"
+                      label="Callback URL (Nhận kết quả từ n8n)"
+                    >
+                      <Input
+                        prefix={<LinkOutlined style={{ color: '#64748B' }} />}
+                        placeholder="http://localhost:8080/api/report-deliveries/callback"
+                      />
                     </Form.Item>
-                  </Card>
-                </Col>
-              </Row>
+                  </Col>
+                  <Col span={10}>
+                    <Form.Item
+                      name="callbackToken"
+                      label="X-TT15-Callback-Token (Bảo mật callback)"
+                    >
+                      <Input.Password
+                        placeholder="Token xác thực callback"
+                        prefix={<KeyOutlined style={{ color: '#64748B' }} />}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-              <Divider style={{ margin: '16px 0' }}>Cấu hình Phản Hồi Kết Quả (Callback)</Divider>
+                <Form.Item name="description" label="Ghi Chú / Mô Tả Kênh">
+                  <Input.TextArea rows={2} placeholder="Mô tả mục đích và cơ chế truyền nhận..." />
+                </Form.Item>
+              </Form>
+            </Col>
 
-              <Row gutter={16}>
-                <Col span={16}>
-                  <Form.Item
-                    name="callbackUrl"
-                    label="Callback URL (Nhận trạng thái hoàn thành từ n8n)"
-                  >
-                    <Input placeholder="http://localhost:8080/api/report-deliveries/callback" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="timeoutSeconds" label="Thời gian Timeout">
-                    <Select>
-                      <Select.Option value={15}>15 giây</Select.Option>
-                      <Select.Option value={30}>30 giây</Select.Option>
-                      <Select.Option value={60}>60 giây</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Form>
-          </Card>
-        </Col>
-
-        {/* Payload Structure Reference */}
-        <Col xs={24} lg={9}>
-          <Card title="Quy Cách Đóng Gói Gửi Đi (Payload Specs)" style={{ borderRadius: 8 }}>
-            <Alert
-              message="Định dạng truyền nhận: multipart/form-data"
-              type="info"
-              showIcon
-              style={{ marginBottom: 12 }}
-            />
-
-            <Descriptions column={1} size="small" bordered>
-              <Descriptions.Item
-                label={
-                  <Space>
-                    <FileTextOutlined style={{ color: '#003B95' }} />
-                    <Text strong>Part 1: metadata</Text>
-                  </Space>
-                }
+            {/* Spec Card */}
+            <Col xs={24} lg={9}>
+              <Card
+                title={`Đặc Tả Luồng Truyền: ${activeDestination}`}
+                size="small"
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6 }}
               >
-                <div style={{ fontSize: 11, color: '#334155' }}>
-                  Đối tượng JSON chứa <code>correlationId</code>, <code>reportCode</code>, <code>versionNumber</code>, <code>reportingDate</code>, <code>callbackUrl</code>.
-                </div>
-              </Descriptions.Item>
+                <Descriptions column={1} size="small" bordered>
+                  <Descriptions.Item label="Đích Tiếp Nhận">
+                    <Tag color="processing" style={{ fontWeight: 600 }}>
+                      {activeDestination}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Cơ Chế Gửi">
+                    <Text strong>multipart/form-data</Text> (metadata JSON + ZIP artifact)
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Chế Độ Vận Hành">
+                    {currentConfig?.isMock ? (
+                      <Tag color="warning">MOCK (Giả lập phản hồi)</Tag>
+                    ) : (
+                      <Tag color="success">THẬT (Truyền n8n & Gateway)</Tag>
+                    )}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Cập Nhật Lần Cuối">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {currentConfig?.updatedAt ? new Date(currentConfig.updatedAt).toLocaleString('vi-VN') : 'Mặc định khởi tạo'}
+                    </Text>
+                  </Descriptions.Item>
+                </Descriptions>
 
-              <Descriptions.Item
-                label={
-                  <Space>
-                    <FileZipOutlined style={{ color: '#7C3AED' }} />
-                    <Text strong>Part 2: file</Text>
-                  </Space>
-                }
-              >
-                <div style={{ fontSize: 11, color: '#334155' }}>
-                  Tệp nén nhị phân <code>.zip</code> chứa file JSON báo cáo QĐ573 chính thức (đã tính toán mã băm SHA-256).
+                <div style={{ marginTop: 16, fontSize: 12, color: '#64748B', lineHeight: 1.6 }}>
+                  💡 <strong>Lưu ý:</strong>
+                  <ul style={{ paddingLeft: 16, margin: '6px 0 0 0' }}>
+                    <li>
+                      Khi sửa Webhook URL hoặc Bật/Tắt Mock tại đây, Backend sẽ áp dụng ngay lập tức mà không cần khởi động lại máy chủ.
+                    </li>
+                    <li>
+                      Nút <strong>Test Ping</strong> gửi bản tin thử nghiệm JSON đến Webhook URL để đo độ trễ mạng và kiểm tra phản hồi HTTP 202.
+                    </li>
+                  </ul>
                 </div>
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Quy trình xử lý">
-                <div style={{ fontSize: 11, lineHeight: 1.6 }}>
-                  1. TT15 Backend bắn Webhook (multipart).<br />
-                  2. n8n phản hồi ngay <strong>HTTP 202 Accepted</strong>.<br />
-                  3. n8n xử lý truyền tiếp sang CIC/SVB.<br />
-                  4. n8n gọi Callback cập nhật <strong>DELIVERED</strong>.
-                </div>
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </Col>
-      </Row>
+              </Card>
+            </Col>
+          </Row>
+        )}
+      </Card>
     </div>
   );
 };

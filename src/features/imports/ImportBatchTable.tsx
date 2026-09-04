@@ -19,6 +19,7 @@ import {
   HistoryOutlined,
   PlayCircleOutlined,
   FileExcelOutlined,
+  DatabaseOutlined,
   SafetyCertificateOutlined,
   PlusCircleOutlined,
 } from '@ant-design/icons';
@@ -97,19 +98,31 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       dataIndex: 'fileName',
       key: 'fileName',
       width: 280,
-      render: (f, r) => (
-        <div>
-          <Space>
-            <FileExcelOutlined style={{ color: '#10B981', fontSize: 16 }} />
-            <Text strong>{f || r.originalFileName || 'Tệp Dữ Liệu'}</Text>
-          </Space>
-          {r.dataPeriodCode && (
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-              Kỳ: <Tag color="geekblue" style={{ fontSize: 11 }}>{r.dataPeriodCode}</Tag>
+      render: (f, r) => {
+        const isEtl = r.sourceChannel === 'ETL' || (f && f.toLowerCase().includes('etl'));
+        return (
+          <div>
+            <Space>
+              {isEtl ? (
+                <DatabaseOutlined style={{ color: '#722ED1', fontSize: 16 }} />
+              ) : (
+                <FileExcelOutlined style={{ color: '#10B981', fontSize: 16 }} />
+              )}
+              <Text strong>{f || r.originalFileName || 'Tệp Dữ Liệu'}</Text>
+            </Space>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
+              {isEtl ? (
+                <Tag color="purple" style={{ fontSize: 11, margin: 0 }}>BI ETL Pipeline</Tag>
+              ) : (
+                <Tag color="default" style={{ fontSize: 11, margin: 0 }}>File Excel</Tag>
+              )}
+              {r.dataPeriodCode && (
+                <Tag color="geekblue" style={{ fontSize: 11, margin: 0 }}>Kỳ: {r.dataPeriodCode}</Tag>
+              )}
             </div>
-          )}
-        </div>
-      ),
+          </div>
+        );
+      },
     },
     {
       title: 'Loại Báo Cáo',
