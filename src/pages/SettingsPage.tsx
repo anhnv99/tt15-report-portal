@@ -430,26 +430,26 @@ export const SettingsPage: React.FC = () => {
                     </Button>
                   </div>
 
-                  <Row gutter={12}>
-                    <Col span={8}>
+                  <Row gutter={16}>
+                    <Col span={7}>
                       <Form.Item
                         label={
-                          <Space size={4}>
-                            <span>Mã Đơn Vị TCTD ({'{UNIT_CODE}'})</span>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 4 }}>
+                            <span>Mã Đơn Vị TCTD</span>
                             {systemProfile?.reportingUnitCode && (
-                              <Tooltip title="Mã đơn vị khai báo gốc trong application.yaml (Click để áp dụng)">
+                              <Tooltip title="Mã gốc trong application.yaml (Click để áp dụng)">
                                 <Tag
                                   color="cyan"
-                                  style={{ cursor: 'pointer', fontSize: 11, marginInlineEnd: 0 }}
+                                  style={{ cursor: 'pointer', fontSize: 11, margin: 0, padding: '0 5px', lineHeight: '18px' }}
                                   onClick={() => handleRuleChange('unitCode', systemProfile.reportingUnitCode)}
                                 >
                                   yaml: {systemProfile.reportingUnitCode}
                                 </Tag>
                               </Tooltip>
                             )}
-                          </Space>
+                          </div>
                         }
-                        tooltip="Mã TCTD gửi báo cáo (VD: PTF cho CIC/PCB, 79301001 cho SBV, hoặc lấy từ application.yaml)"
+                        tooltip="Biến {UNIT_CODE}: Mã định danh gửi báo cáo (VD: PTF hoặc 79301001)"
                         style={{ marginBottom: 12 }}
                       >
                         <Input
@@ -460,7 +460,7 @@ export const SettingsPage: React.FC = () => {
                         />
                       </Form.Item>
                     </Col>
-                    <Col span={10}>
+                    <Col span={11}>
                       <Form.Item
                         label="Cấu Trúc Tên Tệp (Formula)"
                         tooltip="Biến hỗ trợ: {REPORT_CODE}, {UNIT_CODE}, {DATE}, {SEQUENCE}, {EXT}"
