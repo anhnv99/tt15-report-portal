@@ -7,6 +7,7 @@ import {
   Package,
   History,
   FileText,
+  Send,
 } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { CicReportVersion } from '@/types';
@@ -24,6 +25,7 @@ interface ReportVersionsTabProps {
   onOpenTimeline: (versionId: string) => void;
   onOpenAdjust?: (version: CicReportVersion) => void;
   onToggleActive?: (versionId: string) => Promise<void> | void;
+  onSend?: (version: CicReportVersion, destination?: string) => Promise<void> | void;
 }
 
 export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
@@ -35,6 +37,7 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
   onOpenTimeline,
   onOpenAdjust,
   onToggleActive,
+  onSend,
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -176,6 +179,19 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
                   />
                 </Tooltip>
               </>
+            )}
+
+            {r.status === 'APPROVED' && isEnabled && onSend && (
+              <Tooltip title="Nộp phiên bản này sang cổng CIC (H2H)">
+                <Button
+                  type="primary"
+                  shape="circle"
+                  size="small"
+                  icon={<Send size={14} />}
+                  style={{ background: '#003B95', borderColor: '#003B95', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  onClick={() => onSend(r, 'CIC')}
+                />
+              </Tooltip>
             )}
 
             {onOpenAdjust && r.status !== 'APPROVED' && isEnabled && (

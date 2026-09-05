@@ -133,6 +133,7 @@ export const ReportsPage: React.FC = () => {
                     setAdjustModalOpen(true);
                   }}
                   onToggleActive={handleToggleVersionActive}
+                  onSend={handleSendApprovedVersion}
                 />
               ),
             },

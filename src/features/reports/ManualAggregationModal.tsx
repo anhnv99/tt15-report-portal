@@ -29,10 +29,12 @@ export const ManualAggregationModal: React.FC<ManualAggregationModalProps> = ({
   const columns: ColumnsType<ImportBatch> = [
     {
       title: 'Mã Lô',
-      dataIndex: 'batchCode',
       key: 'batchCode',
-      width: 130,
-      render: (c) => <Text code>{c}</Text>,
+      width: 140,
+      render: (_, r) => {
+        const code = r.batchCode || r.id;
+        return <Text code copyable={{ text: code }}>{code ? `${code.substring(0, 8)}...` : '-'}</Text>;
+      },
     },
     {
       title: 'Tên Tệp Đã Import',

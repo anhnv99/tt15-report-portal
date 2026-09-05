@@ -55,17 +55,22 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
     return { total, pending, accepted, delivered, failed };
   }, [deliveries]);
 
-  // List approved versions that don't have a delivery yet
+  // List approved versions that don't have an accepted/delivered transmission yet
   const pendingApprovedVersions = useMemo(() => {
-    return versions.filter((v) => v.status === 'APPROVED');
-  }, [versions]);
+    const deliveredVersionIds = new Set(
+      deliveries
+        .filter((d) => d.status === 'ACCEPTED' || d.status === 'DELIVERED')
+        .map((d) => d.reportVersionId)
+    );
+    return versions.filter((v) => v.status === 'APPROVED' && !deliveredVersionIds.has(v.id));
+  }, [versions, deliveries]);
 
   const deliveryColumns: ColumnsType<ReportDelivery> = [
     {
       title: 'Mã Phiên Bản',
       dataIndex: 'reportVersionId',
       key: 'reportVersionId',
-      width: 140,
+      width: 130,
       render: (id) => <Text code strong>{id ? id.substring(0, 8) : '-'}</Text>,
     },
     {
@@ -84,49 +89,72 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
       title: 'Trạng Thái',
       dataIndex: 'status',
       key: 'status',
-      width: 130,
-      render: (s: string) => <Tag color={getDeliveryStatusColor(s)}>{s}</Tag>,
+      width: 140,
+      render: (s: string) => {
+        const color = getDeliveryStatusColor(s);
+        const label = s === 'ACCEPTED' ? 'ĐÃ TIẾP NHẬN (202)' : s;
+        return <Tag color={color} style={{ fontWeight: 600 }}>{label}</Tag>;
+      },
     },
     {
       title: 'Thời Gian Gửi',
-      dataIndex: 'dispatchedAt',
       key: 'dispatchedAt',
       width: 160,
-      render: (d) => (d ? new Date(d).toLocaleString('vi-VN') : '-'),
+      render: (_, r) => {
+        const d = r.lastAttemptAt || r.dispatchedAt;
+        return d ? new Date(d).toLocaleString('vi-VN') : '-';
+      },
     },
     {
       title: 'Thời Gian Xác Nhận',
-      dataIndex: 'deliveredAt',
       key: 'deliveredAt',
       width: 160,
-      render: (d) => (d ? new Date(d).toLocaleString('vi-VN') : '-'),
+      render: (_, r) => {
+        const d = r.deliveredAt || r.acceptedAt;
+        return d ? new Date(d).toLocaleString('vi-VN') : '-';
+      },
     },
     {
-      title: 'Số Lần Thử',
-      dataIndex: 'retryCount',
-      key: 'retryCount',
-      width: 110,
-      render: (c) => <Tag>{c || 0} lần</Tag>,
+      title: 'Lần Thử',
+      key: 'attemptCount',
+      width: 90,
+      render: (_, r) => <Tag>{r.attemptCount ?? r.retryCount ?? 0} lần</Tag>,
     },
     {
-      title: 'Mã Tiếp Nhận CIC / Phản Hồi',
-      dataIndex: 'receiptReference',
+      title: 'Mã Tiếp Nhận CIC / Phản Hồi Webhook',
       key: 'receiptReference',
-      render: (r, row) => (
-        <div>
-          {r ? <Text code strong style={{ color: '#003B95' }}>{r}</Text> : <Text type="secondary">-</Text>}
-          {row.errorMessage && (
-            <div style={{ color: '#EF4444', fontSize: 12, marginTop: 2 }}>
-              Lỗi: {row.errorMessage}
-            </div>
-          )}
-        </div>
-      ),
+      render: (_, row) => {
+        const extId = row.externalId || row.receiptReference;
+        const msg = row.message || row.errorMessage;
+        return (
+          <Space direction="vertical" size={2}>
+            <Space>
+              {extId ? (
+                <Text code strong style={{ color: '#003B95', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                  {extId}
+                </Text>
+              ) : (
+                <Text type="secondary">-</Text>
+              )}
+              {row.httpStatus && (
+                <Tag color={row.httpStatus === 202 || row.httpStatus === 200 ? 'cyan' : 'red'} style={{ fontSize: 11 }}>
+                  HTTP {row.httpStatus}
+                </Tag>
+              )}
+            </Space>
+            {msg && (
+              <div style={{ color: row.status === 'FAILED' ? '#EF4444' : '#475569', fontSize: 12, lineHeight: 1.3 }}>
+                {msg}
+              </div>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: 'Thao Tác',
       key: 'actions',
-      width: 130,
+      width: 120,
       render: (_, r) => (
         <Space size="small">
           {r.status === 'PENDING' && (
