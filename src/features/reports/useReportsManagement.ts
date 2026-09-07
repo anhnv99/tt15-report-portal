@@ -160,11 +160,13 @@ export const useReportsManagement = () => {
             try {
               setLoading(true);
               message.loading('Đang đồng bộ dữ liệu từ bảng Staging (Tempo)...', 1.5);
-              const syncRes = await biIntegrationApi.syncNow(periodObj.id, selectedTemplate);
-              const batchCode = syncRes.batchCode || (syncRes as any).id;
-              if (batchCode) {
-                message.loading('Đang phê duyệt Lô dữ liệu...', 1.5);
-                await importApi.approveImportBatch(String(batchCode));
+              const syncRes = await biIntegrationApi.syncNow(periodObj.id, selectedTemplate, true);
+              if (syncRes?.status !== 'APPROVED') {
+                const batchCode = syncRes.batchCode || (syncRes as any).id;
+                if (batchCode) {
+                  message.loading('Đang phê duyệt Lô dữ liệu...', 1.5);
+                  await importApi.approveImportBatch(String(batchCode));
+                }
               }
               message.loading('Đang khởi chạy tổng hợp báo cáo...', 1.5);
               await reportingApi.createAutomaticAggregation({

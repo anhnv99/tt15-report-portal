@@ -21,9 +21,9 @@ export const biIntegrationApi = {
     return Array.isArray(res) ? res : [];
   },
 
-  syncNow: async (kdlId: number, reportCode: string = 'D10'): Promise<any> => {
+  syncNow: async (kdlId: number, reportCode: string = 'D10', autoApprove: boolean = false): Promise<any> => {
     return apiClient.post<any, any>('/integrations/bi/sync-now', null, {
-      params: { kdlId, reportCode },
+      params: { kdlId, reportCode, autoApprove },
     });
   },
 

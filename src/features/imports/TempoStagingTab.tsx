@@ -115,10 +115,12 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
     }
     try {
       setSyncingAndApproving(true);
-      const res = await biIntegrationApi.syncNow(kdlId, selectedSyncReport);
-      const batchCode = res.batchCode || (res as any).id;
-      if (batchCode) {
-        await importApi.approveImportBatch(String(batchCode));
+      const res = await biIntegrationApi.syncNow(kdlId, selectedSyncReport, true);
+      if (res?.status !== 'APPROVED') {
+        const batchCode = res.batchCode || (res as any).id;
+        if (batchCode) {
+          await importApi.approveImportBatch(String(batchCode));
+        }
       }
       message.success(
         `Đã đồng bộ (${res.fileSize || 0} dòng) và tự động phê duyệt Lô thành công! Lô đã sẵn sàng để tổng hợp báo cáo.`,
