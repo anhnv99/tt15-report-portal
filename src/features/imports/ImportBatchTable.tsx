@@ -100,7 +100,15 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       width: 140,
       render: (_, r) => {
         const displayCode = r.batchCode || (r.id ? `BATCH-${r.id.substring(0, 8).toUpperCase()}` : 'BATCH');
-        return <Text code strong style={{ color: '#003B95' }}>{displayCode}</Text>;
+        return (
+          <Button
+            type="link"
+            style={{ padding: 0, fontWeight: 700, color: '#003B95' }}
+            onClick={() => onOpenStaging(r)}
+          >
+            {displayCode}
+          </Button>
+        );
       },
     },
     {
@@ -109,16 +117,16 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       key: 'fileName',
       width: 280,
       render: (f, r) => {
-        const isEtl = r.sourceChannel === 'ETL' || (f && f.toLowerCase().includes('etl'));
+        const isEtl = r.sourceChannel === 'ETL' || (f && f.toLowerCase().includes('etl')) || (f && f.toLowerCase().includes('bi_sync'));
         return (
           <div>
-            <Space>
+            <Space style={{ cursor: 'pointer' }} onClick={() => onOpenStaging(r)}>
               {isEtl ? (
                 <DatabaseOutlined style={{ color: '#722ED1', fontSize: 16 }} />
               ) : (
                 <FileExcelOutlined style={{ color: '#10B981', fontSize: 16 }} />
               )}
-              <Text strong>{f || r.originalFileName || 'Tệp Dữ Liệu'}</Text>
+              <Text strong style={{ color: '#0F172A' }}>{f || r.originalFileName || 'Tệp Dữ Liệu'}</Text>
             </Space>
             <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
               {isEtl ? (
@@ -153,11 +161,30 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       key: 'quality',
       width: 230,
       render: (_, r) => {
+        const isEtl = r.sourceChannel === 'ETL' || (r.fileName && r.fileName.toLowerCase().includes('etl')) || (r.fileName && r.fileName.toLowerCase().includes('bi_sync'));
         const total = r.totalRows || 0;
         const valid = r.validRows || 0;
         const error = r.errorRows || 0;
 
+        if (isEtl && total > 0) {
+          return (
+            <Space direction="vertical" size={2}>
+              <Tag color="purple" style={{ margin: 0, fontWeight: 500 }}>
+                {total.toLocaleString()} bản ghi Staging SSoT
+              </Tag>
+              <Text type="secondary" style={{ fontSize: 11 }}>Đồng bộ tự động từ BI DWH</Text>
+            </Space>
+          );
+        }
+
         if (total === 0) {
+          if (isEtl) {
+            return (
+              <Tag color="purple" style={{ margin: 0 }}>
+                Dữ liệu BI Staging (tempo_***)
+              </Tag>
+            );
+          }
           if (r.status === 'APPROVED') {
             return <Tag color="green">Đã duyệt (Lô mẫu)</Tag>;
           }
@@ -289,14 +316,17 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
             </>
           )}
 
-          <Tooltip title={`Xem chi tiết dữ liệu Staging (${(r.totalRows || 0).toLocaleString()} dòng)`}>
+          <Tooltip title="Xem chi tiết dữ liệu Staging & thông tin lô">
             <Button
-              shape="circle"
+              type="primary"
+              ghost
               size="small"
               icon={<Eye size={14} />}
               onClick={() => onOpenStaging(r)}
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-            />
+            >
+              Chi tiết
+            </Button>
           </Tooltip>
 
           {onOpenSupplement && r.status !== 'REJECTED' && (

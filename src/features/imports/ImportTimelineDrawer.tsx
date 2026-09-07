@@ -18,15 +18,17 @@ export const ImportTimelineDrawer: React.FC<ImportTimelineDrawerProps> = ({
   loading,
   onClose,
 }) => {
-  const getActionColor = (eventType: string) => {
-    switch (eventType) {
+  const getActionColor = (eventType?: string) => {
+    switch (eventType?.toUpperCase()) {
       case 'APPROVED':
         return 'green';
       case 'REJECTED':
         return 'red';
       case 'STAGED':
+      case 'PROCESSED':
         return 'blue';
       case 'UPLOADED':
+      case 'RECEIVED':
       default:
         return 'orange';
     }
@@ -41,7 +43,7 @@ export const ImportTimelineDrawer: React.FC<ImportTimelineDrawerProps> = ({
         </span>
       }
       placement="right"
-      width={500}
+      width={520}
       onClose={onClose}
       open={open}
     >
@@ -51,28 +53,33 @@ export const ImportTimelineDrawer: React.FC<ImportTimelineDrawerProps> = ({
         ) : (
           <Timeline
             mode="left"
-            items={events.map((e) => ({
-              color: getActionColor(e.eventType),
-              children: (
-                <Card size="small" style={{ marginBottom: 8, borderRadius: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <Tag color={getActionColor(e.eventType)}>{e.eventType}</Tag>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {e.occurredAt ? new Date(e.occurredAt).toLocaleString('vi-VN') : ''}
-                    </Text>
-                  </div>
-                  <div>
-                    <Text strong style={{ fontSize: 13 }}>Người thực hiện:</Text>{' '}
-                    <Text code>{e.actor || 'Hệ thống'}</Text>
-                  </div>
-                  {e.reason && (
-                    <div style={{ marginTop: 4, color: '#475569', fontSize: 12 }}>
-                      Lý do: {e.reason}
+            items={events.map((e) => {
+              const eventType = e.eventType || e.action || 'SỰ KIỆN';
+              const actor = e.actor || e.actorRef || 'Hệ thống';
+              const reason = e.reason || e.comment;
+              return {
+                color: getActionColor(eventType),
+                children: (
+                  <Card size="small" style={{ marginBottom: 8, borderRadius: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <Tag color={getActionColor(eventType)}>{eventType}</Tag>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {e.occurredAt ? new Date(e.occurredAt).toLocaleString('vi-VN') : ''}
+                      </Text>
                     </div>
-                  )}
-                </Card>
-              ),
-            }))}
+                    <div>
+                      <Text strong style={{ fontSize: 13 }}>Người thực hiện:</Text>{' '}
+                      <Text code>{actor}</Text>
+                    </div>
+                    {reason && (
+                      <div style={{ marginTop: 4, color: '#475569', fontSize: 12 }}>
+                        Ghi chú/Lý do: {reason}
+                      </div>
+                    )}
+                  </Card>
+                ),
+              };
+            })}
           />
         )}
       </Spin>

@@ -106,28 +106,33 @@ export interface ImportBatch {
   importType: string;
   dataPeriodId: number;
   dataPeriodCode?: string;
-  originalFileName: string;
+  originalFileName?: string;
   fileSize: number;
   sourceChannel?: 'MANUAL' | 'ETL' | string;
   status: ImportBatchStatus;
-  totalRows: number;
-  validRows: number;
-  errorRows: number;
+  totalRows?: number;
+  validRows?: number;
+  errorRows?: number;
   rejectionReason?: string;
   uploadedBy?: string;
   approvedBy?: string;
-  createdAt: string;
+  submittedBy?: string;
+  submittedAt?: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 
 export interface ImportApprovalEvent {
-  id: string;
+  id?: string;
   batchCode?: string;
   batchId?: string;
-  eventType: string;
-  actor: string;
+  action?: string;
+  actorRef?: string;
+  comment?: string;
+  eventType?: string;
+  actor?: string;
   reason?: string;
-  occurredAt: string;
+  occurredAt?: string;
 }
 
 export interface StagingRow {

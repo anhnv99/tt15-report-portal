@@ -422,6 +422,8 @@ export const ImportsPage: React.FC = () => {
         rows={stagingRows}
         loading={stagingLoading}
         onClose={() => setStagingDrawerOpen(false)}
+        periods={periods}
+        templates={templates}
       />
 
       {/* Timeline Drawer */}
