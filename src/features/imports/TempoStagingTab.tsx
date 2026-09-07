@@ -52,6 +52,7 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
   const [selectedSyncPeriod, setSelectedSyncPeriod] = useState<number | undefined>(undefined);
   const [selectedSyncReport, setSelectedSyncReport] = useState<string>('D10');
   const [syncing, setSyncing] = useState<boolean>(false);
+  const [syncingAndApproving, setSyncingAndApproving] = useState<boolean>(false);
 
   // Preview Drawer
   const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false);
@@ -94,7 +95,7 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
     try {
       setSyncing(true);
       const res = await biIntegrationApi.syncNow(kdlId, selectedSyncReport);
-      message.success(`Đã đồng bộ thành công dữ liệu từ BI! Lô đã được tạo và sẵn sàng cho Checker phê duyệt.`);
+      message.success(`Đã đồng bộ thành công dữ liệu từ BI! Lô đã được tạo (PROCESSED) và sẵn sàng cho Checker phê duyệt.`);
       loadTempoTables();
       loadBiStatuses();
       onBatchCreated?.();
@@ -103,6 +104,34 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
       message.error(err?.response?.data?.message || 'Không thể đồng bộ và tạo lô từ BI');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleSyncAndApproveNow = async () => {
+    const kdlId = selectedSyncPeriod || (periods && periods.length > 0 ? periods[0].id : undefined);
+    if (!kdlId) {
+      message.warning('Vui lòng chọn kỳ dữ liệu để đồng bộ');
+      return;
+    }
+    try {
+      setSyncingAndApproving(true);
+      const res = await biIntegrationApi.syncNow(kdlId, selectedSyncReport);
+      const batchCode = res.batchCode || (res as any).id;
+      if (batchCode) {
+        await importApi.approveImportBatch(String(batchCode));
+      }
+      message.success(
+        `Đã đồng bộ (${res.fileSize || 0} dòng) và tự động phê duyệt Lô thành công! Lô đã sẵn sàng để tổng hợp báo cáo.`,
+        5
+      );
+      loadTempoTables();
+      loadBiStatuses();
+      onBatchCreated?.();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể đồng bộ và phê duyệt lô');
+    } finally {
+      setSyncingAndApproving(false);
     }
   };
 
@@ -288,12 +317,20 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
               />
               <Button
                 type="primary"
+                icon={<CheckCircleOutlined />}
+                loading={syncingAndApproving}
+                style={{ background: '#10B981', borderColor: '#10B981', fontWeight: 600 }}
+                onClick={handleSyncAndApproveNow}
+              >
+                Đồng Bộ & Duyệt Ngay (Sẵn Sàng Làm Báo Cáo)
+              </Button>
+              <Button
                 icon={<SyncOutlined spin={syncing} />}
                 loading={syncing}
-                style={{ background: '#722ED1', borderColor: '#722ED1' }}
+                style={{ borderColor: '#722ED1', color: '#722ED1' }}
                 onClick={handleSyncNow}
               >
-                Tạo Lô Duyệt Từ BI
+                Chỉ Tạo Lô Chờ Duyệt
               </Button>
             </Space>
           </Col>

@@ -9,12 +9,13 @@ import {
 } from '@ant-design/icons';
 import { ShieldCheck, Eye, GitBranch, FilePlus } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
-import type { ReportAggregation } from '@/types';
+import type { ReportAggregation, DataPeriod } from '@/types';
 
 const { Text } = Typography;
 
 interface ReportAggregationsTabProps {
   aggregations: ReportAggregation[];
+  periods?: DataPeriod[];
   loading: boolean;
   onAutoAggregate: () => Promise<void>;
   onOpenManualAggregation: () => void;
@@ -26,6 +27,7 @@ interface ReportAggregationsTabProps {
 
 export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
   aggregations,
+  periods = [],
   loading,
   onAutoAggregate,
   onOpenManualAggregation,
@@ -65,10 +67,12 @@ export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
     },
     {
       title: 'Kỳ Dữ Liệu',
-      dataIndex: 'dataPeriodCode',
-      key: 'dataPeriodCode',
+      key: 'dataPeriod',
       width: 130,
-      render: (c) => <Text strong>{c}</Text>,
+      render: (_, r) => {
+        const p = periods.find((item) => item.id === r.dataPeriodId || item.code === r.dataPeriodCode);
+        return <Text strong>{p ? (p.code || p.name) : (r.dataPeriodCode || `#${r.dataPeriodId}`)}</Text>;
+      },
     },
     {
       title: 'Trạng Thái',

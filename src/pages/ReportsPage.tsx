@@ -148,6 +148,7 @@ export const ReportsPage: React.FC = () => {
               children: (
                 <ReportAggregationsTab
                   aggregations={aggregations}
+                  periods={periods}
                   loading={loading}
                   onAutoAggregate={handleAutoAggregate}
                   onOpenManualAggregation={handleOpenManualAggregation}

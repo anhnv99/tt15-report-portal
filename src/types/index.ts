@@ -142,8 +142,9 @@ export type AggregationStatus = 'CREATED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
 export interface ReportAggregation {
   id: string;
+  dataPeriodId?: number;
   reportCode: string;
-  dataPeriodCode: string;
+  dataPeriodCode?: string;
   status: AggregationStatus;
   totalRecords: number;
   sourceBatchCount: number;

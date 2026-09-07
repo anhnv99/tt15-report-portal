@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { message } from 'antd';
+import { message, Modal } from 'antd';
 import { reportingApi } from '@/api/reporting.api';
 import { catalogApi } from '@/api/catalog.api';
 import { importApi } from '@/api/import.api';
+import { biIntegrationApi } from '@/api/bi-integration.api';
 import type {
   ReportTemplate,
   DataPeriod,
@@ -127,7 +128,7 @@ export const useReportsManagement = () => {
       message.warning('Vui lòng chọn Biểu mẫu và Kỳ dữ liệu');
       return;
     }
-    const periodObj = periods.find((p) => p.code === selectedPeriod);
+    const periodObj = periods.find((p) => p.code === selectedPeriod || p.id === Number(selectedPeriod));
     if (!periodObj) {
       message.warning('Không tìm thấy thông tin kỳ dữ liệu được chọn');
       return;
@@ -140,8 +141,49 @@ export const useReportsManagement = () => {
       });
       message.success('Đã khởi tạo quy trình tổng hợp tự động thành công!');
       loadReportData();
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.message || err?.message || '';
+      const errorCode = err?.response?.data?.error?.code;
+
+      if (
+        errorCode === 'IMPORT_BATCHES_NOT_READY' ||
+        errorMsg.includes('No approved import batches') ||
+        errorMsg.includes('not ready for this report and period')
+      ) {
+        Modal.confirm({
+          title: 'Chưa có Lô dữ liệu nào được duyệt cho kỳ này!',
+          content: `Hệ thống chưa tìm thấy Lô dữ liệu đã duyệt cho biểu mẫu ${selectedTemplate} trong kỳ ${periodObj.name || periodObj.code}. Bạn có muốn tự động quét dữ liệu từ bảng Staging (Tempo), tự động phê duyệt Lô và tổng hợp báo cáo ngay không?`,
+          okText: 'Tự động lấy Tempo & Tổng hợp ngay',
+          okButtonProps: { style: { background: '#003B95', borderColor: '#003B95' } },
+          cancelText: 'Hủy bỏ',
+          onOk: async () => {
+            try {
+              setLoading(true);
+              message.loading('Đang đồng bộ dữ liệu từ bảng Staging (Tempo)...', 1.5);
+              const syncRes = await biIntegrationApi.syncNow(periodObj.id, selectedTemplate);
+              const batchCode = syncRes.batchCode || (syncRes as any).id;
+              if (batchCode) {
+                message.loading('Đang phê duyệt Lô dữ liệu...', 1.5);
+                await importApi.approveImportBatch(String(batchCode));
+              }
+              message.loading('Đang khởi chạy tổng hợp báo cáo...', 1.5);
+              await reportingApi.createAutomaticAggregation({
+                reportCode: selectedTemplate,
+                dataPeriodId: periodObj.id,
+              });
+              message.success('Đã tự động lấy dữ liệu Staging và hoàn tất tổng hợp báo cáo thành công!');
+              await loadReportData();
+            } catch (autoErr: any) {
+              console.error(autoErr);
+              message.error(autoErr?.response?.data?.message || 'Có lỗi khi tự động tổng hợp từ Tempo');
+            } finally {
+              setLoading(false);
+            }
+          },
+        });
+      } else {
+        console.error(err);
+      }
     } finally {
       setLoading(false);
     }
@@ -202,7 +244,7 @@ export const useReportsManagement = () => {
 
   // Create CIC Report Version from Completed Aggregation
   const handleCreateVersionFromAggregation = async (agg: ReportAggregation) => {
-    const periodObj = periods.find((p) => p.code === agg.dataPeriodCode) || periods[0];
+    const periodObj = periods.find((p) => p.code === agg.dataPeriodCode || p.id === (agg as any).dataPeriodId) || periods[0];
     const nextVersion = versions.filter((v) => v.reportCode === agg.reportCode).length + 1;
     try {
       setLoading(true);
@@ -216,8 +258,9 @@ export const useReportsManagement = () => {
       message.success(`Đã tạo thành công Phiên bản Báo cáo v${nextVersion}!`);
       await loadReportData();
       setActiveTab('versions');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể tạo phiên bản báo cáo');
     } finally {
       setLoading(false);
     }
@@ -242,9 +285,9 @@ export const useReportsManagement = () => {
   const handleRunRulesCheck = async (aggId: string) => {
     try {
       setLoading(true);
-      await reportingApi.evaluateReportChecks({
-        aggregationId: aggId,
-        reportCode: selectedTemplate,
+      await catalogApi.executeRules({
+        ruleType: 'VALIDATION',
+        datasetCode: selectedTemplate,
         values: {},
       });
       message.success('Đã thực thi kiểm tra xong');
@@ -276,16 +319,22 @@ export const useReportsManagement = () => {
       await reportingApi.approveCicReportVersion(versionId);
       message.success('Đã phê duyệt phiên bản báo cáo thành công!');
       loadReportData();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể phê duyệt phiên bản');
     }
   };
 
   const handleRejectVersionSubmit = async (versionId: string, reason: string) => {
-    await reportingApi.rejectCicReportVersion(versionId, reason);
-    message.success('Đã từ chối phiên bản báo cáo!');
-    setRejectVersionModalOpen(false);
-    loadReportData();
+    try {
+      await reportingApi.rejectCicReportVersion(versionId, reason);
+      message.success('Đã từ chối phiên bản báo cáo!');
+      setRejectVersionModalOpen(false);
+      loadReportData();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể từ chối phiên bản');
+    }
   };
 
   const handleToggleVersionActive = async (versionId: string) => {
@@ -349,31 +398,37 @@ export const useReportsManagement = () => {
       });
       message.success('Đã đóng gói thành công tệp báo cáo chuẩn CIC');
       loadArtifacts(selectedVersion.id);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      message.error(err?.response?.data?.message || 'Lỗi khi đóng gói tệp báo cáo');
     } finally {
       setGeneratingArtifact(false);
     }
   };
 
   // Deliveries
-  const handleDispatch = async (deliveryId: string) => {
+  const handleDispatch = async (deliveryIdOrVersionId: string, destination?: string) => {
     try {
-      await reportingApi.dispatchReportDelivery({ reportVersionId: deliveryId });
+      const del = deliveries.find((d) => d.id === deliveryIdOrVersionId);
+      const targetVersionId = del ? del.reportVersionId : deliveryIdOrVersionId;
+      const targetDest = destination || (del ? del.destination : 'CIC');
+      await reportingApi.dispatchReportDelivery({ reportVersionId: targetVersionId, destination: targetDest });
       message.success('Đã kích hoạt gửi tệp báo cáo sang CIC!');
       setTimeout(() => loadReportData(), 1200);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      message.error(err?.response?.data?.message || 'Lỗi khi kích hoạt gửi báo cáo');
     }
   };
 
   const handleRetry = async (deliveryId: string) => {
     try {
       await reportingApi.retryReportDelivery(deliveryId);
-      message.success('Đã gửi lại tệp báo cáo sang CIC');
+      message.success('Đã kích hoạt gửi lại tệp báo cáo sang CIC!');
       setTimeout(() => loadReportData(), 1200);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      message.error(err?.response?.data?.message || 'Lỗi khi gửi lại báo cáo');
     }
   };
 
@@ -382,8 +437,9 @@ export const useReportsManagement = () => {
       await reportingApi.dispatchReportDelivery({ reportVersionId: version.id, destination });
       message.success(`Đã nộp phiên bản v${version.versionNumber} sang kênh ${destination.toUpperCase()}!`);
       setTimeout(() => loadReportData(), 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      message.error(err?.response?.data?.message || 'Lỗi khi nộp phiên bản báo cáo');
     }
   };
 

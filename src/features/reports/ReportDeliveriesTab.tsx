@@ -17,7 +17,7 @@ interface ReportDeliveriesTabProps {
   deliveries: ReportDelivery[];
   versions: CicReportVersion[];
   loading: boolean;
-  onDispatch: (deliveryId: string) => Promise<void>;
+  onDispatch: (deliveryIdOrVersionId: string, destination?: string) => Promise<void>;
   onRetry: (deliveryId: string) => Promise<void>;
   onSendApprovedVersion: (version: CicReportVersion, destination?: string) => Promise<void>;
 }
@@ -70,8 +70,22 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
       title: 'Mã Phiên Bản',
       dataIndex: 'reportVersionId',
       key: 'reportVersionId',
-      width: 130,
-      render: (id) => <Text code strong>{id ? id.substring(0, 8) : '-'}</Text>,
+      width: 140,
+      render: (id) => {
+        const v = versions.find((ver) => ver.id === id);
+        return (
+          <Space direction="vertical" size={0}>
+            {v && (
+              <Tag color="geekblue" style={{ fontWeight: 600 }}>
+                v{v.versionNumber} ({v.reportCode})
+              </Tag>
+            )}
+            <Text code style={{ fontSize: 11 }}>
+              {id ? id.substring(0, 8) : '-'}
+            </Text>
+          </Space>
+        );
+      },
     },
     {
       title: 'Đích Tiếp Nhận',
@@ -163,7 +177,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
               size="small"
               icon={<SendOutlined />}
               style={{ background: '#003B95' }}
-              onClick={() => onDispatch(r.id)}
+              onClick={() => onDispatch(r.reportVersionId || r.id, r.destination)}
             >
               Gửi Ngay
             </Button>
