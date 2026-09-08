@@ -13,7 +13,6 @@ import {
   Spin,
   Tooltip,
   Select,
-  Alert,
   message,
 } from 'antd';
 import {
@@ -265,14 +264,6 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
 
   return (
     <div>
-      <Alert
-        message="Chuẩn Hóa Nạp Dữ Liệu Tự Động (Single Source of Truth - SSoT)"
-        description="Đội BI nạp dữ liệu trực tiếp vào 17 bảng staging PostgreSQL theo cặp (kdl_id, version). Hệ thống tự động phân tích và lắp ráp báo cáo chính thức từ các bảng này mà không cần upload file thủ công."
-        type="info"
-        showIcon
-        style={{ marginBottom: 16, borderRadius: 8 }}
-      />
-
       {/* BI Sync & Auto-Batch Trigger Card */}
       <Card
         style={{ marginBottom: 16, borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}
