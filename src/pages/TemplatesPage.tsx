@@ -101,9 +101,15 @@ export const TemplatesPage: React.FC = () => {
   // Field Actions
   const handleAddField = async (values: any) => {
     if (!selectedTemplate) return;
-    await catalogApi.addTemplateField(selectedTemplate.reportCode, values);
-    message.success('Đã thêm trường dữ liệu mới');
-    loadTemplateDetail(selectedTemplate.reportCode);
+    try {
+      await catalogApi.addTemplateField(selectedTemplate.reportCode, values);
+      message.success('Đã thêm trường dữ liệu mới thành công');
+      loadTemplateDetail(selectedTemplate.reportCode);
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || err?.message || 'Không thể thêm trường dữ liệu');
+      throw err;
+    }
   };
 
   const handleDeleteField = async (fieldId: number) => {

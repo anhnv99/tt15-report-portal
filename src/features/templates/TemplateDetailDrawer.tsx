@@ -101,7 +101,11 @@ export const TemplateDetailDrawer: React.FC<TemplateDetailDrawerProps> = ({
   const handleAddFieldSubmit = async () => {
     try {
       const values = await fieldForm.validateFields();
-      await onAddField(values);
+      await onAddField({
+        ...values,
+        sourceReference: values.sourceReference?.trim() || template?.sourceReference || 'QĐ 573 / Phụ lục',
+        maxLength: values.maxLength ? Number(values.maxLength) : undefined,
+      });
       setAddFieldOpen(false);
       fieldForm.resetFields();
     } catch (err) {
@@ -272,26 +276,32 @@ export const TemplateDetailDrawer: React.FC<TemplateDetailDrawerProps> = ({
                   </div>
 
                   {addFieldOpen && (
-                    <Card size="small" style={{ marginBottom: 16, background: '#F8FAFC' }}>
+                    <Card size="small" style={{ marginBottom: 16, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
                       <Form form={fieldForm} layout="inline">
-                        <Form.Item name="indicatorCode" rules={[{ required: true }]} style={{ width: 140 }}>
-                          <Input placeholder="Mã chỉ tiêu (CN001)" />
+                        <Form.Item name="indicatorCode" rules={[{ required: true, message: 'Nhập mã chỉ tiêu' }]} style={{ width: 130, marginBottom: 8 }}>
+                          <Input placeholder="Mã chỉ tiêu (TK001)" />
                         </Form.Item>
-                        <Form.Item name="jsonPath" rules={[{ required: true }]} style={{ width: 180 }}>
-                          <Input placeholder="JSON Path (CANHAN[].CN001)" />
+                        <Form.Item name="jsonPath" rules={[{ required: true, message: 'Nhập JSON path' }]} style={{ width: 170, marginBottom: 8 }}>
+                          <Input placeholder="JSON Path (TK001)" />
                         </Form.Item>
-                        <Form.Item name="dataType" initialValue="C" style={{ width: 90 }}>
+                        <Form.Item name="dataType" initialValue="C" style={{ width: 95, marginBottom: 8 }}>
                           <Select>
                             <Select.Option value="C">Chuỗi (C)</Select.Option>
                             <Select.Option value="N">Số (N)</Select.Option>
                             <Select.Option value="D">Ngày (D)</Select.Option>
                           </Select>
                         </Form.Item>
-                        <Form.Item name="mandatory" valuePropName="checked" initialValue={true}>
+                        <Form.Item name="maxLength" style={{ width: 95, marginBottom: 8 }}>
+                          <Input placeholder="Độ dài (250)" type="number" />
+                        </Form.Item>
+                        <Form.Item name="sourceReference" initialValue={template?.sourceReference || 'QĐ 573 / Phụ lục'} style={{ width: 150, marginBottom: 8 }}>
+                          <Input placeholder="Căn cứ quy định" />
+                        </Form.Item>
+                        <Form.Item name="mandatory" valuePropName="checked" initialValue={true} style={{ marginBottom: 8 }}>
                           <Switch checkedChildren="Bắt buộc" unCheckedChildren="Tùy chọn" />
                         </Form.Item>
-                        <Space>
-                          <Button type="primary" size="small" onClick={handleAddFieldSubmit}>
+                        <Space style={{ marginBottom: 8 }}>
+                          <Button type="primary" size="small" style={{ background: '#003B95' }} onClick={handleAddFieldSubmit}>
                             Lưu
                           </Button>
                           <Button size="small" onClick={() => setAddFieldOpen(false)}>
@@ -308,16 +318,18 @@ export const TemplateDetailDrawer: React.FC<TemplateDetailDrawerProps> = ({
                     pagination={{ pageSize: 10 }}
                     size="small"
                     columns={[
-                      { title: 'Mã Chỉ Tiêu', dataIndex: 'indicatorCode', width: 130, render: (c) => <Text code>{c}</Text> },
-                      { title: 'JSON Path', dataIndex: 'jsonPath', render: (p) => <Text strong>{p}</Text> },
+                      { title: 'Mã Chỉ Tiêu', dataIndex: 'indicatorCode', width: 120, render: (c) => <Text code strong>{c}</Text> },
+                      { title: 'JSON Path', dataIndex: 'jsonPath', width: 180, render: (p) => <Text strong>{p}</Text> },
                       { title: 'Kiểu', dataIndex: 'dataType', width: 70, render: (t) => <Tag color="blue">{t}</Tag> },
-                      { title: 'Bắt Buộc', dataIndex: 'mandatory', width: 100, render: (m) => (m ? <Tag color="red">Bắt buộc</Tag> : <Tag>Tùy chọn</Tag>) },
+                      { title: 'Độ Dài', dataIndex: 'maxLength', width: 80, render: (l) => (l ? `${l}` : '-') },
+                      { title: 'Bắt Buộc', dataIndex: 'mandatory', width: 90, render: (m) => (m ? <Tag color="red">Bắt buộc</Tag> : <Tag>Tùy chọn</Tag>) },
+                      { title: 'Căn Cứ / Nguồn', dataIndex: 'sourceReference', render: (s) => <Text type="secondary" style={{ fontSize: 12 }}>{s || '-'}</Text> },
                       {
                         title: '',
                         key: 'del',
                         width: 50,
                         render: (_, r) => (
-                          <Popconfirm title="Xóa trường?" onConfirm={() => onDeleteField(r.id)}>
+                          <Popconfirm title="Xóa trường này?" onConfirm={() => onDeleteField(r.id)}>
                             <Button type="text" danger size="small" icon={<DeleteOutlined />} />
                           </Popconfirm>
                         ),
