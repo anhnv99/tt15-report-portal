@@ -18,10 +18,14 @@ import type {
 } from '@/types';
 
 export const useReportsManagement = () => {
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const initialUrlTemplate = searchParams?.get('template') || 'D10';
+  const initialUrlPeriod = searchParams?.get('period') || '';
+
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [periods, setPeriods] = useState<DataPeriod[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('D10');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(initialUrlTemplate);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(initialUrlPeriod);
 
   const [versions, setVersions] = useState<CicReportVersion[]>([]);
   const [aggregations, setAggregations] = useState<ReportAggregation[]>([]);
@@ -77,16 +81,22 @@ export const useReportsManagement = () => {
       ]);
       setTemplates(tplData || []);
       setPeriods(prdData || []);
+      const paramPeriodId = searchParams?.get('periodId');
+      if (paramPeriodId && prdData?.length) {
+        const found = prdData.find((p) => String(p.id) === String(paramPeriodId) || p.code === String(paramPeriodId));
+        if (found) {
+          setSelectedPeriod(found.code);
+        }
+      } else if (!selectedPeriod && prdData?.length) {
+        setSelectedPeriod(prdData[0].code);
+      }
       if (tplData?.length && !selectedTemplate) {
         setSelectedTemplate(tplData[0].reportCode);
-      }
-      if (prdData?.length && !selectedPeriod) {
-        setSelectedPeriod(prdData[0].code);
       }
     } catch (err) {
       console.error(err);
     }
-  }, [selectedTemplate, selectedPeriod]);
+  }, [selectedTemplate, selectedPeriod, searchParams]);
 
   const loadReportData = useCallback(async () => {
     try {

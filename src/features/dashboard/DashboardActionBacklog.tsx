@@ -1,27 +1,43 @@
-import React from 'react';
-import { Card, Typography, Space, Badge, Tabs, Empty, Table, Tag, Button } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Typography, Space, Badge, Tabs, Empty, Table, Tag, Button, Popconfirm } from 'antd';
 import {
   ToolOutlined,
   ClockCircleOutlined,
   AuditOutlined,
   WarningOutlined,
   RightCircleOutlined,
+  CheckCircleOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
 import type { DashboardPendingStats } from './DashboardKpiCards';
+import type { DataPeriod } from '@/types';
 
 const { Title: AntTitle, Text: AntText } = Typography;
 
 interface DashboardActionBacklogProps {
   pendingStats: DashboardPendingStats;
+  periods?: DataPeriod[];
   onNavigateImports: () => void;
   onNavigateReports: () => void;
+  onNavigateReportWithParam?: (template: string, periodCode?: string) => void;
+  onApproveReport?: (versionId: string) => Promise<void>;
 }
 
 export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
   pendingStats,
+  periods = [],
   onNavigateImports,
   onNavigateReports,
+  onNavigateReportWithParam,
+  onApproveReport,
 }) => {
+  const [activeTab, setActiveTab] = useState<string>('staged');
+
+  useEffect(() => {
+    if (pendingStats.stagedBatches.length === 0 && pendingStats.draftReports.length > 0) {
+      setActiveTab('draft-reports');
+    }
+  }, [pendingStats.stagedBatches.length, pendingStats.draftReports.length]);
   return (
     <Card
       style={{
@@ -61,7 +77,8 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
       </div>
 
       <Tabs
-        defaultActiveKey="staged"
+        activeKey={activeTab}
+        onChange={setActiveTab}
         type="card"
         size="small"
         items={[
@@ -187,51 +204,210 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         key: 'reportCode',
                         width: 130,
                         render: (c) => (
-                          <AntText strong style={{ color: '#003B95' }}>
-                            {c}
-                          </AntText>
+                          <Space direction="vertical" size={2}>
+                            <AntText strong style={{ color: '#003B95', fontSize: 13 }}>
+                              {c}
+                            </AntText>
+                            <Tag color="blue" style={{ fontSize: 10, margin: 0 }}>TT15/NHNN</Tag>
+                          </Space>
                         ),
                       },
                       {
-                        title: 'Phiên Bản',
-                        dataIndex: 'versionNumber',
-                        key: 'versionNumber',
-                        width: 100,
-                        render: (v) => <Tag color="purple">v{v}</Tag>,
+                        title: 'Kỳ Dữ Liệu Báo Cáo',
+                        key: 'dataPeriod',
+                        width: 200,
+                        render: (_, r) => {
+                          const p = periods.find((item) => item.id === r.dataPeriodId || item.code === String(r.dataPeriodId));
+                          return (
+                            <div>
+                              <AntText strong style={{ fontSize: 12 }}>
+                                {p?.name || `Kỳ ${r.reportingDate || r.dataPeriodId}`}
+                              </AntText>
+                              <div style={{ fontSize: 11, color: '#64748B' }}>
+                                Mã kỳ: <AntText code style={{ fontSize: 11 }}>{p?.code || r.dataPeriodId}</AntText>
+                              </div>
+                            </div>
+                          );
+                        },
                       },
                       {
-                        title: 'Tên File Chuẩn QĐ573',
-                        dataIndex: 'fileNameStandard',
-                        key: 'fileNameStandard',
-                        render: (f) => (
-                          <AntText code style={{ fontSize: 11 }}>
-                            {f || '-'}
-                          </AntText>
+                        title: 'Phiên Bản & Ngày Báo Cáo',
+                        key: 'version',
+                        width: 170,
+                        render: (_, r) => (
+                          <Space direction="vertical" size={2}>
+                            <Tag color="purple" style={{ fontWeight: 600 }}>v{r.versionNumber}</Tag>
+                            <span style={{ fontSize: 11, color: '#64748B' }}>
+                              Ngày BC: {r.reportingDate || '-'}
+                            </span>
+                          </Space>
                         ),
+                      },
+                      {
+                        title: 'Gói Tin Dự Kiến (QĐ573)',
+                        key: 'expectedFile',
+                        render: (_, r) => {
+                          const cleanDate = (r.reportingDate || '').replace(/[^0-9]/g, '') || '20260930';
+                          const fileName = `CIC_${r.reportCode}_${cleanDate}_v${r.versionNumber}.xml`;
+                          return (
+                            <Space direction="vertical" size={0}>
+                              <AntText code style={{ fontSize: 11, color: '#0F172A' }}>
+                                {fileName}
+                              </AntText>
+                              <span style={{ fontSize: 10, color: '#10B981' }}>Chuẩn phân cấp Phụ lục II</span>
+                            </Space>
+                          );
+                        },
                       },
                       {
                         title: 'Trạng Thái',
                         dataIndex: 'status',
                         key: 'status',
-                        width: 120,
-                        render: () => <Tag color="warning">Bản Nháp (Draft)</Tag>,
+                        width: 140,
+                        render: () => (
+                          <Tag color="warning" icon={<ClockCircleOutlined />} style={{ fontWeight: 500 }}>
+                            Chờ Ký Duyệt
+                          </Tag>
+                        ),
                       },
                       {
                         title: 'Hành Động Cần Làm',
                         key: 'actions',
-                        width: 210,
-                        render: () => (
-                          <Space>
+                        width: 240,
+                        render: (_, r) => (
+                          <Space size={6}>
+                            {onApproveReport && (
+                              <Popconfirm
+                                title="Ký duyệt phiên bản báo cáo này?"
+                                description={`Phê duyệt biểu mẫu ${r.reportCode} (v${r.versionNumber}) để chuyển sang hàng đợi truyền nhận.`}
+                                onConfirm={() => onApproveReport(r.id)}
+                                okText="Ký Duyệt"
+                                cancelText="Hủy"
+                                okButtonProps={{ style: { background: '#10B981', borderColor: '#10B981' } }}
+                              >
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  icon={<CheckCircleOutlined />}
+                                  style={{ background: '#10B981', borderColor: '#10B981', fontWeight: 500 }}
+                                >
+                                  Ký Duyệt
+                                </Button>
+                              </Popconfirm>
+                            )}
                             <Button
-                              type="primary"
                               size="small"
                               icon={<RightCircleOutlined />}
-                              style={{ background: '#4F46E5', borderColor: '#4F46E5' }}
-                              onClick={onNavigateReports}
+                              style={{ borderColor: '#003B95', color: '#003B95' }}
+                              onClick={() => {
+                                const p = periods.find((item) => item.id === r.dataPeriodId);
+                                if (onNavigateReportWithParam) {
+                                  onNavigateReportWithParam(r.reportCode, p?.code || String(r.dataPeriodId));
+                                } else {
+                                  onNavigateReports();
+                                }
+                              }}
                             >
-                              Kiểm Tra Rules & Duyệt
+                              Xem & Rules
                             </Button>
                           </Space>
+                        ),
+                      },
+                    ]}
+                  />
+                )}
+              </div>
+            ),
+          },
+          {
+            key: 'approved-reports',
+            label: (
+              <Space>
+                <CheckCircleOutlined style={{ color: '#10B981' }} />
+                <span>Báo Cáo Đã Duyệt Sẵn Sàng Gửi ({pendingStats.approvedReports.length})</span>
+              </Space>
+            ),
+            children: (
+              <div>
+                {pendingStats.approvedReports.length === 0 ? (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description="Chưa có báo cáo nào đã duyệt hoàn tất"
+                  />
+                ) : (
+                  <Table
+                    dataSource={pendingStats.approvedReports}
+                    rowKey="id"
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                    columns={[
+                      {
+                        title: 'Mã Biểu Mẫu',
+                        dataIndex: 'reportCode',
+                        key: 'reportCode',
+                        width: 130,
+                        render: (c) => (
+                          <Space direction="vertical" size={2}>
+                            <AntText strong style={{ color: '#003B95', fontSize: 13 }}>
+                              {c}
+                            </AntText>
+                            <Tag color="green" style={{ fontSize: 10, margin: 0 }}>ĐÃ DUYỆT</Tag>
+                          </Space>
+                        ),
+                      },
+                      {
+                        title: 'Kỳ Dữ Liệu Báo Cáo',
+                        key: 'dataPeriod',
+                        width: 200,
+                        render: (_, r) => {
+                          const p = periods.find((item) => item.id === r.dataPeriodId || item.code === String(r.dataPeriodId));
+                          return (
+                            <div>
+                              <AntText strong style={{ fontSize: 12 }}>
+                                {p?.name || `Kỳ ${r.reportingDate || r.dataPeriodId}`}
+                              </AntText>
+                              <div style={{ fontSize: 11, color: '#64748B' }}>
+                                Mã kỳ: <AntText code style={{ fontSize: 11 }}>{p?.code || r.dataPeriodId}</AntText>
+                              </div>
+                            </div>
+                          );
+                        },
+                      },
+                      {
+                        title: 'Phiên Bản',
+                        dataIndex: 'versionNumber',
+                        key: 'versionNumber',
+                        width: 120,
+                        render: (v) => <Tag color="purple">v{v}</Tag>,
+                      },
+                      {
+                        title: 'Trạng Thái',
+                        dataIndex: 'status',
+                        key: 'status',
+                        width: 140,
+                        render: () => <Tag color="success" icon={<CheckCircleOutlined />}>Đã Phê Duyệt</Tag>,
+                      },
+                      {
+                        title: 'Hành Động Cần Làm',
+                        key: 'actions',
+                        width: 220,
+                        render: (_, r) => (
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<SendOutlined />}
+                            style={{ background: '#0284C7', borderColor: '#0284C7' }}
+                            onClick={() => {
+                              const p = periods.find((item) => item.id === r.dataPeriodId);
+                              if (onNavigateReportWithParam) {
+                                onNavigateReportWithParam(r.reportCode, p?.code || String(r.dataPeriodId));
+                              } else {
+                                onNavigateReports();
+                              }
+                            }}
+                          >
+                            Chuyển Sang Truyền Nhận
+                          </Button>
                         ),
                       },
                     ]}

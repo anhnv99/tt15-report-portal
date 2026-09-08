@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Spin } from 'antd';
+import { Spin, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { operationsApi } from '@/api/operations.api';
 import { importApi } from '@/api/import.api';
@@ -65,6 +65,12 @@ export const DashboardPage: React.FC = () => {
     return batches.filter((b) => b.dataPeriodId === selectedPeriodId);
   }, [batches, selectedPeriodId]);
 
+  // Filter versions by selected period
+  const filteredVersions = useMemo(() => {
+    if (selectedPeriodId === 'ALL') return versions;
+    return versions.filter((v) => v.dataPeriodId === selectedPeriodId);
+  }, [versions, selectedPeriodId]);
+
   // Operational Pending & Alert Metrics
   const pendingStats = useMemo(() => {
     // 1. Batches Pending Checker Approval (PROCESSED / STAGED) or Initial Processing (RECEIVED / UPLOADED)
@@ -121,10 +127,10 @@ export const DashboardPage: React.FC = () => {
     const totalRows = totalValidRows + totalErrorRows;
 
     // 3. Reports Pending Review (DRAFT) or Rejected
-    const draftReports = versions.filter((v) => v.status === 'DRAFT');
-    const rejectedReports = versions.filter((v) => v.status === 'REJECTED');
-    const approvedReports = versions.filter((v) => v.status === 'APPROVED');
-    const submittedReports = versions.filter((v) => v.status === 'SUBMITTED');
+    const draftReports = filteredVersions.filter((v) => v.status === 'DRAFT');
+    const rejectedReports = filteredVersions.filter((v) => v.status === 'REJECTED');
+    const approvedReports = filteredVersions.filter((v) => v.status === 'APPROVED');
+    const submittedReports = filteredVersions.filter((v) => v.status === 'SUBMITTED');
 
     // 4. Aggregations Pending / Running / Failed
     const runningAggs = aggregations.filter((a) => a.status === 'RUNNING');
@@ -148,7 +154,7 @@ export const DashboardPage: React.FC = () => {
       failedAggs,
       qualityRate,
     };
-  }, [filteredBatches, versions, aggregations]);
+  }, [filteredBatches, filteredVersions, aggregations]);
 
   // Backlog / Alert Chart: Error Rows vs Valid Rows by Template
   const backlogChartData = useMemo(() => {
@@ -258,6 +264,21 @@ export const DashboardPage: React.FC = () => {
     return items;
   }, [pendingStats, filteredBatches]);
 
+  const handleApproveReport = async (versionId: string) => {
+    try {
+      await reportingApi.approveVersion(versionId);
+      message.success('Đã phê duyệt phiên bản báo cáo thành công!');
+      loadAllDashboardData();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể phê duyệt báo cáo');
+    }
+  };
+
+  const handleNavigateReportWithParam = (template: string, periodCode?: string) => {
+    navigate(`/reports?template=${template}${periodCode ? `&period=${periodCode}` : ''}`);
+  };
+
   return (
     <div>
       {/* 1. WAR-ROOM HEADER & PERIOD FILTER */}
@@ -283,8 +304,11 @@ export const DashboardPage: React.FC = () => {
         {/* 3. URGENT BACKLOG & ACTION ITEMS REQUIRED */}
         <DashboardActionBacklog
           pendingStats={pendingStats}
+          periods={periods}
           onNavigateImports={() => navigate('/imports')}
           onNavigateReports={() => navigate('/reports')}
+          onNavigateReportWithParam={handleNavigateReportWithParam}
+          onApproveReport={handleApproveReport}
         />
 
         {/* 4. COMPARATIVE BAR & DONUT CHARTS */}
