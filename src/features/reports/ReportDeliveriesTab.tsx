@@ -137,6 +137,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
     {
       title: 'Mã Tiếp Nhận CIC / Phản Hồi Webhook',
       key: 'receiptReference',
+      width: 250,
       render: (_, row) => {
         const extId = row.externalId || row.receiptReference;
         const msg = row.message || row.errorMessage;
@@ -284,6 +285,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1100 }}
       />
     </div>
   );
