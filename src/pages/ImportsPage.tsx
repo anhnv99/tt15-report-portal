@@ -377,7 +377,7 @@ export const ImportsPage: React.FC = () => {
               label: (
                 <Space>
                   <DatabaseOutlined style={{ color: "#003B95" }} />
-                  <span>Dữ Liệu BI Staging (tempo_*** - Chuẩn SSoT)</span>
+                  <span>Dữ Liệu BI Staging (tempo_***)</span>
                 </Space>
               ),
               children: (

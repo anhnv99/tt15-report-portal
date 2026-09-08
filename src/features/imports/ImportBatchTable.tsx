@@ -99,15 +99,32 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       key: 'batchCode',
       width: 140,
       render: (_, r) => {
-        const displayCode = r.batchCode || (r.id ? `BATCH-${r.id.substring(0, 8).toUpperCase()}` : 'BATCH');
+        const rawCode = r.batchCode || r.id || '';
+        const isLongOrUuid = rawCode.length > 16 || rawCode.includes('-');
+        const displayCode = isLongOrUuid
+          ? `BATCH-${rawCode.replace(/-/g, '').substring(0, 8).toUpperCase()}`
+          : (rawCode || 'BATCH');
+
         return (
-          <Button
-            type="link"
-            style={{ padding: 0, fontWeight: 700, color: '#003B95' }}
-            onClick={() => onOpenStaging(r)}
-          >
-            {displayCode}
-          </Button>
+          <Tooltip title={`Mã đợt đầy đủ: ${r.batchCode || r.id}`}>
+            <Button
+              type="link"
+              style={{
+                padding: 0,
+                fontWeight: 700,
+                color: '#003B95',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: 130,
+                display: 'inline-block',
+                textAlign: 'left',
+              }}
+              onClick={() => onOpenStaging(r)}
+            >
+              {displayCode}
+            </Button>
+          </Tooltip>
         );
       },
     },
@@ -118,17 +135,24 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       width: 280,
       render: (f, r) => {
         const isEtl = r.sourceChannel === 'ETL' || (f && f.toLowerCase().includes('etl')) || (f && f.toLowerCase().includes('bi_sync'));
+        const fileName = f || r.originalFileName || 'Tệp Dữ Liệu';
         return (
-          <div>
-            <Space style={{ cursor: 'pointer' }} onClick={() => onOpenStaging(r)}>
+          <div style={{ maxWidth: 260 }}>
+            <Space
+              style={{ cursor: 'pointer', maxWidth: '100%' }}
+              onClick={() => onOpenStaging(r)}
+              align="start"
+            >
               {isEtl ? (
-                <DatabaseOutlined style={{ color: '#722ED1', fontSize: 16 }} />
+                <DatabaseOutlined style={{ color: '#722ED1', fontSize: 16, marginTop: 3 }} />
               ) : (
-                <FileExcelOutlined style={{ color: '#10B981', fontSize: 16 }} />
+                <FileExcelOutlined style={{ color: '#10B981', fontSize: 16, marginTop: 3 }} />
               )}
-              <Text strong style={{ color: '#0F172A' }}>{f || r.originalFileName || 'Tệp Dữ Liệu'}</Text>
+              <Text strong style={{ color: '#0F172A', wordBreak: 'break-word', display: 'inline-block' }}>
+                {fileName}
+              </Text>
             </Space>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               {isEtl ? (
                 <Tag color="purple" style={{ fontSize: 11, margin: 0 }}>BI ETL Pipeline</Tag>
               ) : (
@@ -153,13 +177,13 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
       title: 'Trạng Thái',
       dataIndex: 'status',
       key: 'status',
-      width: 150,
+      width: 140,
       render: (s: string) => getStatusTag(s),
     },
     {
-      title: 'Chất Lượng Dữ Liệu (Data Health)',
+      title: 'Chất Lượng Dữ Liệu',
       key: 'quality',
-      width: 230,
+      width: 220,
       render: (_, r) => {
         const isEtl = r.sourceChannel === 'ETL' || (r.fileName && r.fileName.toLowerCase().includes('etl')) || (r.fileName && r.fileName.toLowerCase().includes('bi_sync'));
         const total = r.totalRows || 0;
@@ -170,7 +194,7 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
           return (
             <Space direction="vertical" size={2}>
               <Tag color="purple" style={{ margin: 0, fontWeight: 500 }}>
-                {total.toLocaleString()} bản ghi Staging SSoT
+                {total.toLocaleString()} bản ghi Staging
               </Tag>
               <Text type="secondary" style={{ fontSize: 11 }}>Đồng bộ tự động từ BI DWH</Text>
             </Space>
@@ -224,7 +248,7 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
     {
       title: 'Người Tải / Thời Điểm',
       key: 'uploader',
-      width: 170,
+      width: 160,
       render: (_, r) => {
         const time = r.createdAt || (r as any).submittedAt;
         return (
@@ -240,10 +264,10 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
     {
       title: 'Thao Tác',
       key: 'actions',
-      width: 220,
+      width: 190,
       fixed: 'right' as const,
       render: (_, r) => (
-        <Space size={6}>
+        <Space size={6} wrap={false}>
           {(r.status === 'UPLOADED' || r.status === 'RECEIVED') && (
             <Tooltip title="Chạy tiền xử lý dữ liệu (Staging)">
               <Button
@@ -398,7 +422,7 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1200 }}
         rowSelection={{
           selectedRowKeys,
           onChange: setSelectedRowKeys,

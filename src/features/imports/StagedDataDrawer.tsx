@@ -579,7 +579,7 @@ export const StagedDataDrawer: React.FC<StagedDataDrawerProps> = ({
                         icon={<DatabaseOutlined style={{ color: '#722ED1' }} />}
                         message={
                           <Text strong style={{ color: '#1E293B' }}>
-                            Dữ Liệu Bảng Staging BI (Chuẩn SSoT trong PostgreSQL)
+                            Dữ Liệu Bảng Staging BI (PostgreSQL)
                           </Text>
                         }
                         description={
