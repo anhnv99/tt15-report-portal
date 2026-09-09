@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Drawer,
   Spin,
@@ -33,6 +33,7 @@ import {
   FileExcelOutlined,
 } from '@ant-design/icons';
 import type { ReportTemplate, ReportTemplateField, ReportTemplateRule } from '@/types';
+import { catalogApi } from '@/api/catalog.api';
 import { generateJsonSample } from './utils/jsonTemplateGenerator';
 import { resolveReportSheetConfig, downloadMultiSheetExcelTemplate } from '@/features/imports/utils/multiSheetTemplateGenerator';
 
@@ -67,6 +68,42 @@ export const TemplateDetailDrawer: React.FC<TemplateDetailDrawerProps> = ({
 }) => {
   const [fieldForm] = Form.useForm();
   const [addFieldOpen, setAddFieldOpen] = useState(false);
+  const [makerCheckerLoading, setMakerCheckerLoading] = useState(false);
+  const [requireMakerChecker, setRequireMakerChecker] = useState(template?.requireMakerChecker !== false);
+
+  useEffect(() => {
+    if (template) {
+      setRequireMakerChecker(template.requireMakerChecker !== false);
+    }
+  }, [template]);
+
+  const handleToggleMakerChecker = async (checked: boolean) => {
+    if (!template) return;
+    try {
+      setMakerCheckerLoading(true);
+      await catalogApi.updateReportTemplate(template.reportCode, {
+        templateNumber: template.templateNumber || '01',
+        reportName: template.reportName,
+        frequency: template.frequency || 'MONTHLY',
+        dataPeriodTypeId: template.dataPeriodTypeId || 1,
+        filePrefix: template.filePrefix || template.reportCode,
+        rootStructure: template.rootStructure || '{}',
+        sourceReference: template.sourceReference || '',
+        isActive: template.isActive !== false,
+        targetDestination: template.targetDestination || 'CIC',
+        requireMakerChecker: checked,
+      });
+      setRequireMakerChecker(checked);
+      template.requireMakerChecker = checked;
+      message.success(`Đã cập nhật: ${checked ? 'Bắt buộc Maker-Checker phê duyệt' : 'Chạy tự động toàn trình (STP)'}`);
+    } catch (e) {
+      message.error('Không thể cập nhật cấu hình Maker-Checker');
+    } finally {
+      setMakerCheckerLoading(false);
+    }
+  };
+
+  const isSbv = template?.targetDestination === 'SBV';
 
   const generatedDrawerJson = useMemo(() => {
     if (!fields.length || !template) return {};
@@ -135,11 +172,52 @@ export const TemplateDetailDrawer: React.FC<TemplateDetailDrawerProps> = ({
         </Space>
       }
       placement="right"
-      width={980}
+      size={980}
       onClose={onClose}
       open={open}
     >
       <Spin spinning={loading}>
+        <Card size="small" style={{ marginBottom: 16, background: '#F8FAFC', borderRadius: 8, borderColor: '#E2E8F0' }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Space size="middle">
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Cơ quan đích:</Text>
+                  <Tag color={isSbv ? 'green' : 'blue'} style={{ fontWeight: 600, fontSize: 13 }}>
+                    {template?.targetDestination || 'CIC'}
+                  </Tag>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Định dạng xuất:</Text>
+                  <Tag color={isSbv ? 'success' : 'processing'}>
+                    {isSbv ? 'Excel (.xlsx)' : 'JSON + ZIP + XLSX'}
+                  </Tag>
+                </div>
+              </Space>
+            </Col>
+            <Col>
+              <Space align="center" size="middle">
+                <div>
+                  <Text strong style={{ fontSize: 13, display: 'block' }}>
+                    Quy trình Maker - Checker:
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {requireMakerChecker ? 'Bắt buộc Checker duyệt' : 'STP Tự động duyệt & nộp'}
+                  </Text>
+                </div>
+                <Switch
+                  checkedChildren="Bắt buộc duyệt"
+                  unCheckedChildren="STP Tự động"
+                  checked={requireMakerChecker}
+                  loading={makerCheckerLoading}
+                  onChange={handleToggleMakerChecker}
+                  style={{ background: requireMakerChecker ? '#003B95' : '#16A34A' }}
+                />
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+
         <Tabs
           defaultActiveKey="rules"
           items={[
@@ -398,60 +476,115 @@ export const TemplateDetailDrawer: React.FC<TemplateDetailDrawerProps> = ({
                 </div>
               ),
             },
-            {
-              key: 'json-schema',
-              label: (
-                <Space>
-                  <CodeOutlined />
-                  <span>Mẫu JSON Schema (Phụ Lục II)</span>
-                </Space>
-              ),
-              children: (
-                <div>
-                  <Row justify="space-between" align="middle" style={{ marginBottom: 12 }}>
-                    <Col>
-                      <Text strong>Cấu trúc JSON Mẫu chuẩn theo Phụ lục II QĐ 573:</Text>
-                    </Col>
-                    <Col>
-                      <Space>
-                        <Button
-                          size="small"
-                          icon={<CopyOutlined />}
-                          onClick={handleCopyJson}
-                        >
-                          Sao Chép
-                        </Button>
-                        <Button
-                          size="small"
-                          type="primary"
-                          icon={<DownloadOutlined />}
-                          style={{ background: '#003B95' }}
-                          onClick={handleDownloadJson}
-                        >
-                          Tải JSON
-                        </Button>
-                      </Space>
-                    </Col>
-                  </Row>
-                  <div
-                    style={{
-                      background: '#0F172A',
-                      color: '#38BDF8',
-                      padding: '16px',
-                      borderRadius: 8,
-                      fontFamily: 'Consolas, Monaco, monospace',
-                      fontSize: 12,
-                      maxHeight: '520px',
-                      overflowY: 'auto',
-                      lineHeight: 1.5,
-                      whiteSpace: 'pre-wrap',
-                    }}
-                  >
-                    {JSON.stringify(generatedDrawerJson, null, 2)}
-                  </div>
-                </div>
-              ),
-            },
+            isSbv
+              ? {
+                  key: 'sbv-excel-template',
+                  label: (
+                    <Space>
+                      <FileExcelOutlined style={{ color: '#16A34A' }} />
+                      <span>Mẫu Biểu Excel NHNN (.xlsx)</span>
+                    </Space>
+                  ),
+                  children: (
+                    <div>
+                      <Alert
+                        type="success"
+                        showIcon
+                        icon={<FileExcelOutlined style={{ color: '#16A34A' }} />}
+                        message="Báo cáo Ngân hàng Nhà nước (SBV) nộp theo định dạng Excel (.xlsx):"
+                        description="Dữ liệu được tổng hợp trực tiếp từ các bảng Staging tempo (ETL) và điền vào mẫu biểu quy định của NHNN. Toàn bộ ô tính, định dạng số, mã băm SHA-256 được bảo toàn nguyên vẹn."
+                        style={{ marginBottom: 16 }}
+                      />
+                      <Card
+                        title={
+                          <Space>
+                            <FileExcelOutlined style={{ color: '#16A34A' }} />
+                            <span>Thông Tin Mẫu Biểu SBV: {template?.reportCode}</span>
+                          </Space>
+                        }
+                        size="small"
+                        extra={
+                          <Tag color={requireMakerChecker ? 'blue' : 'green'}>
+                            {requireMakerChecker ? 'Cần Maker-Checker phê duyệt' : 'Chế độ STP nộp tự động'}
+                          </Tag>
+                        }
+                      >
+                        <Row gutter={[16, 16]}>
+                          <Col span={12}>
+                            <Text type="secondary">Căn cứ pháp lý:</Text>
+                            <div><strong>{template?.sourceReference || 'Thông tư 15/2023/TT-NHNN'}</strong></div>
+                          </Col>
+                          <Col span={12}>
+                            <Text type="secondary">Mã biểu mẫu:</Text>
+                            <div><strong>{template?.reportCode} (Mẫu số {template?.templateNumber || '01'})</strong></div>
+                          </Col>
+                          <Col span={12}>
+                            <Text type="secondary">Nguồn dữ liệu:</Text>
+                            <div><code>tempo_{(template?.reportCode || '').toLowerCase()}_*</code> (Data Lake / BI ETL)</div>
+                          </Col>
+                          <Col span={12}>
+                            <Text type="secondary">Cơ chế nộp:</Text>
+                            <div>{requireMakerChecker ? 'Xuất Excel -> Chờ duyệt -> Nộp n8n' : 'Xuất Excel -> Tự động Approved -> Nộp n8n Webhook (Zero-touch)'}</div>
+                          </Col>
+                        </Row>
+                      </Card>
+                    </div>
+                  ),
+                }
+              : {
+                  key: 'json-schema',
+                  label: (
+                    <Space>
+                      <CodeOutlined />
+                      <span>Mẫu JSON Schema (Phụ Lục II)</span>
+                    </Space>
+                  ),
+                  children: (
+                    <div>
+                      <Row justify="space-between" align="middle" style={{ marginBottom: 12 }}>
+                        <Col>
+                          <Text strong>Cấu trúc JSON Mẫu chuẩn theo Phụ lục II QĐ 573:</Text>
+                        </Col>
+                        <Col>
+                          <Space>
+                            <Button
+                              size="small"
+                              icon={<CopyOutlined />}
+                              onClick={handleCopyJson}
+                            >
+                              Sao Chép
+                            </Button>
+                            <Button
+                              size="small"
+                              type="primary"
+                              icon={<DownloadOutlined />}
+                              style={{ background: '#003B95' }}
+                              onClick={handleDownloadJson}
+                            >
+                              Tải JSON
+                            </Button>
+                          </Space>
+                        </Col>
+                      </Row>
+                      <div
+                        style={{
+                          background: '#0F172A',
+                          color: '#38BDF8',
+                          padding: '16px',
+                          borderRadius: 8,
+                          fontFamily: 'Consolas, Monaco, monospace',
+                          fontSize: 12,
+                          maxHeight: '520px',
+                          overflowY: 'auto',
+                          lineHeight: 1.5,
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {JSON.stringify(generatedDrawerJson, null, 2)}
+                      </div>
+                    </div>
+                  ),
+                },
           ]}
         />
       </Spin>

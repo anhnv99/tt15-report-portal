@@ -104,7 +104,7 @@ export const ReportsPage: React.FC = () => {
       />
 
       {/* Main Tabs Container */}
-      <Card style={{ borderRadius: 8 }} bodyStyle={{ padding: '16px 24px' }}>
+      <Card style={{ borderRadius: 8 }} styles={{ body: { padding: '16px 24px' } }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

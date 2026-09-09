@@ -33,7 +33,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         color: '#FFFFFF',
         border: 'none',
       }}
-      bodyStyle={{ padding: '16px 20px' }}
+      styles={{ body: { padding: '16px 20px' } }}
     >
       <Row justify="space-between" align="middle" gutter={[16, 12]}>
         <Col xs={24} lg={14}>

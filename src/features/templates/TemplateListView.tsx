@@ -88,6 +88,19 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
       render: (p) => <Text code>{p || '-'}</Text>,
     },
     {
+      title: 'Quy Trình Duyệt',
+      key: 'requireMakerChecker',
+      width: 140,
+      render: (_, r) => {
+        const req = r.requireMakerChecker !== false;
+        return (
+          <Tag color={req ? 'blue' : 'green'} style={{ fontWeight: 500 }}>
+            {req ? 'Maker - Checker' : 'STP Tự động'}
+          </Tag>
+        );
+      },
+    },
+    {
       title: 'Trạng Thái',
       key: 'isActive',
       width: 150,
@@ -126,22 +139,34 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
               onClick={() => onOpenDetail(r)}
             />
           </Tooltip>
-          <Tooltip title="Xem định dạng JSON Root Structure">
-            <Button
-              shape="circle"
-              size="small"
-              icon={<Code size={14} />}
-              onClick={() => onViewJson(r.reportCode)}
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-            />
-          </Tooltip>
+          {r.targetDestination === 'SBV' ? (
+            <Tooltip title="Báo cáo Excel NHNN (.xlsx)">
+              <Button
+                shape="circle"
+                size="small"
+                icon={<Code size={14} />}
+                disabled
+                style={{ opacity: 0.4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip title="Xem định dạng JSON Root Structure">
+              <Button
+                shape="circle"
+                size="small"
+                icon={<Code size={14} />}
+                onClick={() => onViewJson(r.reportCode)}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },
   ];
 
   return (
-    <Card style={{ borderRadius: 8 }} bodyStyle={{ padding: '16px 24px' }}>
+    <Card style={{ borderRadius: 8 }} styles={{ body: { padding: '16px 24px' } }}>
       <Table
         columns={columns}
         dataSource={templates}

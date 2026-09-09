@@ -182,7 +182,7 @@ export const CatalogPage: React.FC = () => {
       </Card>
 
       {/* Tabs Container */}
-      <Card style={{ borderRadius: 8 }} bodyStyle={{ padding: '16px 24px' }}>
+      <Card style={{ borderRadius: 8 }} styles={{ body: { padding: '16px 24px' } }}>
         <Tabs
           defaultActiveKey="periods"
           items={[

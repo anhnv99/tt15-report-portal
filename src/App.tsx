@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App as AntdApp } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
@@ -39,22 +39,24 @@ export const App: React.FC = () => {
         },
       }}
     >
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="deliveries" element={<Navigate to="/reports" replace />} />
-            <Route path="imports" element={<ImportsPage />} />
-            <Route path="catalog" element={<CatalogPage />} />
-            <Route path="templates" element={<TemplatesPage />} />
-            <Route path="workflows" element={<WorkflowsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <AntdApp>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="deliveries" element={<Navigate to="/reports" replace />} />
+              <Route path="imports" element={<ImportsPage />} />
+              <Route path="catalog" element={<CatalogPage />} />
+              <Route path="templates" element={<TemplatesPage />} />
+              <Route path="workflows" element={<WorkflowsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AntdApp>
     </ConfigProvider>
   );
 };

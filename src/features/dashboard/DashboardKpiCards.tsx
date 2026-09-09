@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Row, Col, Card, Statistic, Space, Typography, Progress } from 'antd';
 import {
   ClockCircleOutlined,
@@ -72,7 +72,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
               </Space>
             }
             value={pendingStats.pendingBatchesCount}
-            valueStyle={{ color: '#0F172A', fontWeight: 700, fontSize: 24 }}
+            styles={{ content: { color: '#0F172A', fontWeight: 700, fontSize: 24 } }}
             suffix={<span style={{ fontSize: 12, color: '#64748B', fontWeight: 400 }}>lô</span>}
           />
           <div style={{ marginTop: 6, fontSize: 11, color: '#64748B' }}>
@@ -94,7 +94,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
               </Space>
             }
             value={pendingStats.draftReports.length}
-            valueStyle={{ color: '#0F172A', fontWeight: 700, fontSize: 24 }}
+            styles={{ content: { color: '#0F172A', fontWeight: 700, fontSize: 24 } }}
             suffix={<span style={{ fontSize: 12, color: '#64748B', fontWeight: 400 }}>bản</span>}
           />
           <div style={{ marginTop: 6, fontSize: 11, color: '#64748B' }}>
@@ -116,7 +116,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
               </Space>
             }
             value={pendingStats.errorBatches.length}
-            valueStyle={{ color: hasErrors ? '#DC2626' : '#0F172A', fontWeight: 700, fontSize: 24 }}
+            styles={{ content: { color: hasErrors ? '#DC2626' : '#0F172A', fontWeight: 700, fontSize: 24 } }}
             suffix={<span style={{ fontSize: 12, color: hasErrors ? '#DC2626' : '#64748B', fontWeight: 400 }}>lô</span>}
           />
           <div style={{ marginTop: 6, fontSize: 11, color: hasErrors ? '#DC2626' : '#64748B' }}>
@@ -144,7 +144,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
               </Space>
             }
             value={rejectedCount}
-            valueStyle={{ color: hasRejected ? '#D97706' : '#0F172A', fontWeight: 700, fontSize: 24 }}
+            styles={{ content: { color: hasRejected ? '#D97706' : '#0F172A', fontWeight: 700, fontSize: 24 } }}
             suffix={<span style={{ fontSize: 12, color: hasRejected ? '#D97706' : '#64748B', fontWeight: 400 }}>mục</span>}
           />
           <div style={{ marginTop: 6, fontSize: 11, color: hasRejected ? '#D97706' : '#64748B' }}>
@@ -168,7 +168,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
               </Space>
             }
             value={ruleErrorCount}
-            valueStyle={{ color: hasRuleErrors ? '#D97706' : '#0F172A', fontWeight: 700, fontSize: 24 }}
+            styles={{ content: { color: hasRuleErrors ? '#D97706' : '#0F172A', fontWeight: 700, fontSize: 24 } }}
             suffix={<span style={{ fontSize: 12, color: '#64748B', fontWeight: 400 }}>lỗi</span>}
           />
           <div style={{ marginTop: 6, fontSize: 11, color: hasRuleErrors ? '#D97706' : '#64748B' }}>
@@ -191,7 +191,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({
             }
             value={pendingStats.qualityRate}
             suffix="%"
-            valueStyle={{ color: '#0F172A', fontWeight: 700, fontSize: 24 }}
+            styles={{ content: { color: '#0F172A', fontWeight: 700, fontSize: 24 } }}
           />
           <div style={{ marginTop: 6 }}>
             <Progress

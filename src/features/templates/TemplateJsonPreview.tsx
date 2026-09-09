@@ -145,7 +145,7 @@ export const TemplateJsonPreview: React.FC<TemplateJsonPreviewProps> = ({
                 </Space>
               }
               style={{ borderRadius: 8, height: '100%' }}
-              bodyStyle={{ padding: 12 }}
+              styles={{ body: { padding: 12 } }}
             >
               <Alert
                 type="info"
@@ -199,7 +199,7 @@ export const TemplateJsonPreview: React.FC<TemplateJsonPreviewProps> = ({
                 </Row>
               }
               style={{ borderRadius: 8, height: '100%' }}
-              bodyStyle={{ padding: 12 }}
+              styles={{ body: { padding: 12 } }}
             >
               <Table
                 dataSource={filteredFields}

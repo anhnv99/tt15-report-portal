@@ -74,7 +74,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
       render: (id) => {
         const v = versions.find((ver) => ver.id === id);
         return (
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             {v && (
               <Tag color="geekblue" style={{ fontWeight: 600 }}>
                 v{v.versionNumber} ({v.reportCode})
@@ -142,7 +142,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
         const extId = row.externalId || row.receiptReference;
         const msg = row.message || row.errorMessage;
         return (
-          <Space direction="vertical" size={2}>
+          <Space orientation="vertical" size={2}>
             <Space>
               {extId ? (
                 <Text code strong style={{ color: '#003B95', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>

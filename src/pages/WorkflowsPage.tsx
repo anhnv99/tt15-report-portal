@@ -171,13 +171,14 @@ export const WorkflowsPage: React.FC = () => {
         </Row>
       </Card>
 
-      <Card style={{ borderRadius: 8 }} bodyStyle={{ padding: '16px 24px' }}>
+      <Card style={{ borderRadius: 8 }} styles={{ body: { padding: '16px 24px' } }}>
         <Table
           columns={columns}
           dataSource={workflows}
           rowKey="code"
           loading={loading}
           pagination={{ pageSize: 10 }}
+          scroll={{ x: 1000 }}
         />
       </Card>
 
@@ -185,7 +186,7 @@ export const WorkflowsPage: React.FC = () => {
       <Drawer
         title={`Chi tiết Quy Trình: ${selectedWf?.name || ''}`}
         placement="right"
-        width={650}
+        size={650}
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
       >

@@ -192,7 +192,7 @@ export const ImportBatchTable: React.FC<ImportBatchTableProps> = ({
 
         if (isEtl && total > 0) {
           return (
-            <Space direction="vertical" size={2}>
+            <Space orientation="vertical" size={2}>
               <Tag color="purple" style={{ margin: 0, fontWeight: 500 }}>
                 {total.toLocaleString()} bản ghi Staging
               </Tag>

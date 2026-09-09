@@ -59,6 +59,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           2
         ),
         isActive: true,
+        requireMakerChecker: true,
       });
 
       // Load period types
@@ -145,7 +146,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       okText="Tạo Biểu Mẫu"
       cancelText="Hủy"
       width={740}
-      destroyOnClose
+      destroyOnHidden
     >
       <Alert
         message="Hệ Thống Tự Động Hóa Quy Chuẩn Đặt Tên"
@@ -369,6 +370,19 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               <Input placeholder="VD: Quyết định 573/QĐ-NHNN & Thông tư 15/2023/TT-NHNN" />
             </Form.Item>
           </Col>
+          <Col span={12}>
+            <Form.Item
+              name="requireMakerChecker"
+              label="Quy Trình Phê Duyệt (Maker - Checker)"
+              valuePropName="checked"
+              extra="Bật: Cần Maker lập biểu & Checker phê duyệt. Tắt: Tự động phê duyệt & nộp toàn trình (STP / Zero-touch)."
+            >
+              <Switch checkedChildren="Bắt buộc duyệt" unCheckedChildren="Tự động duyệt (STP)" defaultChecked />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               name="isActive"

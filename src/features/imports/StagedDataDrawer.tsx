@@ -184,7 +184,11 @@ export const StagedDataDrawer: React.FC<StagedDataDrawerProps> = ({
         kdlId: periodId,
         limit: 100,
       });
-      setTempoRows(data || []);
+      const mappedData = (data || []).map((r: any, idx: number) => ({
+        _rowKey: r.pk_id ?? r.id ?? `tempo_${idx}`,
+        ...r,
+      }));
+      setTempoRows(mappedData);
     } catch (err) {
       console.error('Error previewing tempo table:', err);
       setTempoRows([]);
@@ -404,7 +408,7 @@ export const StagedDataDrawer: React.FC<StagedDataDrawerProps> = ({
         </Space>
       }
       placement="right"
-      width={1050}
+      size={1050}
       onClose={onClose}
       open={open}
       extra={
@@ -641,7 +645,7 @@ export const StagedDataDrawer: React.FC<StagedDataDrawerProps> = ({
                           <Table
                             columns={dynamicTempoColumns}
                             dataSource={filteredTempoRows}
-                            rowKey={(r, idx) => r.pk_id || idx || Math.random()}
+                            rowKey="_rowKey"
                             pagination={{ pageSize: 10, size: 'small' }}
                             scroll={{ x: 'max-content' }}
                             size="small"
@@ -656,7 +660,7 @@ export const StagedDataDrawer: React.FC<StagedDataDrawerProps> = ({
                     <Empty
                       image={Empty.PRESENTED_IMAGE_SIMPLE}
                       description={
-                        <Space direction="vertical" size={4}>
+                        <Space orientation="vertical" size={4}>
                           <Text strong style={{ color: '#64748B' }}>Lô Dữ Liệu Chưa Có Bản Ghi Nào</Text>
                           <Text type="secondary" style={{ fontSize: 12 }}>
                             {batch?.status === 'RECEIVED' || batch?.status === 'UPLOADED'

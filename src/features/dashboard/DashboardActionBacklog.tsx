@@ -38,6 +38,9 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
       setActiveTab('draft-reports');
     }
   }, [pendingStats.stagedBatches.length, pendingStats.draftReports.length]);
+
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
   return (
     <Card
       style={{
@@ -46,7 +49,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
         border: '1px solid #E2E8F0',
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}
-      bodyStyle={{ padding: '16px 20px' }}
+      styles={{ body: { padding: '16px 20px' } }}
     >
       <div
         style={{
@@ -110,7 +113,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         key: 'batchCode',
                         width: 150,
                         render: (c, r) => (
-                          <Space direction="vertical" size={0}>
+                          <Space orientation="vertical" size={0}>
                             <AntText strong style={{ color: '#003B95' }}>
                               {c}
                             </AntText>
@@ -204,7 +207,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         key: 'reportCode',
                         width: 130,
                         render: (c) => (
-                          <Space direction="vertical" size={2}>
+                          <Space orientation="vertical" size={2}>
                             <AntText strong style={{ color: '#003B95', fontSize: 13 }}>
                               {c}
                             </AntText>
@@ -235,7 +238,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         key: 'version',
                         width: 170,
                         render: (_, r) => (
-                          <Space direction="vertical" size={2}>
+                          <Space orientation="vertical" size={2}>
                             <Tag color="purple" style={{ fontWeight: 600 }}>v{r.versionNumber}</Tag>
                             <span style={{ fontSize: 11, color: '#64748B' }}>
                               Ngày BC: {r.reportingDate || '-'}
@@ -250,7 +253,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                           const cleanDate = (r.reportingDate || '').replace(/[^0-9]/g, '') || '20260930';
                           const fileName = `CIC_${r.reportCode}_${cleanDate}_v${r.versionNumber}.xml`;
                           return (
-                            <Space direction="vertical" size={0}>
+                            <Space orientation="vertical" size={0}>
                               <AntText code style={{ fontSize: 11, color: '#0F172A' }}>
                                 {fileName}
                               </AntText>
@@ -280,15 +283,27 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                               <Popconfirm
                                 title="Ký duyệt phiên bản báo cáo này?"
                                 description={`Phê duyệt biểu mẫu ${r.reportCode} (v${r.versionNumber}) để chuyển sang hàng đợi truyền nhận.`}
-                                onConfirm={() => onApproveReport(r.id)}
+                                onConfirm={async () => {
+                                  setApprovingId(r.id);
+                                  try {
+                                    await onApproveReport(r.id);
+                                  } finally {
+                                    setApprovingId(null);
+                                  }
+                                }}
                                 okText="Ký Duyệt"
                                 cancelText="Hủy"
-                                okButtonProps={{ style: { background: '#10B981', borderColor: '#10B981' } }}
+                                okButtonProps={{
+                                  loading: approvingId === r.id,
+                                  style: { background: '#10B981', borderColor: '#10B981' }
+                                }}
                               >
                                 <Button
                                   type="primary"
                                   size="small"
                                   icon={<CheckCircleOutlined />}
+                                  loading={approvingId === r.id}
+                                  disabled={approvingId !== null}
                                   style={{ background: '#10B981', borderColor: '#10B981', fontWeight: 500 }}
                                 >
                                   Ký Duyệt
@@ -347,7 +362,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         key: 'reportCode',
                         width: 130,
                         render: (c) => (
-                          <Space direction="vertical" size={2}>
+                          <Space orientation="vertical" size={2}>
                             <AntText strong style={{ color: '#003B95', fontSize: 13 }}>
                               {c}
                             </AntText>
@@ -447,7 +462,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         key: 'batchCode',
                         width: 150,
                         render: (c, r) => (
-                          <Space direction="vertical" size={0}>
+                          <Space orientation="vertical" size={0}>
                             <AntText strong style={{ color: '#DC2626' }}>
                               {c}
                             </AntText>

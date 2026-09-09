@@ -41,7 +41,7 @@ export const VersionTimelineDrawer: React.FC<VersionTimelineDrawerProps> = ({
         </span>
       }
       placement="right"
-      width={500}
+      size={500}
       onClose={onClose}
       open={open}
     >

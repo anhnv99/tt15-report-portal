@@ -89,7 +89,7 @@ export const ValidationResultsDrawer: React.FC<ValidationResultsDrawerProps> = (
         </Space>
       }
       placement="right"
-      width={850}
+      size={850}
       onClose={onClose}
       open={open}
       extra={

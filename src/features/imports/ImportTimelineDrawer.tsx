@@ -43,7 +43,7 @@ export const ImportTimelineDrawer: React.FC<ImportTimelineDrawerProps> = ({
         </span>
       }
       placement="right"
-      width={520}
+      size={520}
       onClose={onClose}
       open={open}
     >

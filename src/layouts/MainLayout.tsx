@@ -368,7 +368,7 @@ export const MainLayout: React.FC = () => {
             <Text strong style={{ display: 'block', marginBottom: 8 }}>
               Chọn nhanh máy chủ kết nối:
             </Text>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               <Button
                 block
                 style={{ textAlign: 'left', height: 'auto', padding: '10px 14px' }}

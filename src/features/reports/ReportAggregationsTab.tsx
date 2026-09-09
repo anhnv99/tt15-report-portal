@@ -55,8 +55,14 @@ export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
       title: 'Mã Tổng Hợp',
       dataIndex: 'id',
       key: 'id',
-      width: 140,
-      render: (id) => <Text code strong>{id}</Text>,
+      width: 150,
+      render: (id) => (
+        <Tooltip title={id}>
+          <Text code strong style={{ color: '#003B95' }}>
+            {typeof id === 'string' && id.length > 12 ? `AGG-${id.slice(0, 8).toUpperCase()}` : id}
+          </Text>
+        </Tooltip>
+      ),
     },
     {
       title: 'Biểu Mẫu',
@@ -197,6 +203,7 @@ export const ReportAggregationsTab: React.FC<ReportAggregationsTabProps> = ({
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1100 }}
       />
     </div>
   );

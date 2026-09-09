@@ -66,7 +66,7 @@ export const AggregationLineageDrawer: React.FC<AggregationLineageDrawerProps> =
     <Drawer
       title="Nguồn Dữ Liệu Gốc Của Đợt Tổng Hợp (Lineage)"
       placement="right"
-      width={780}
+      size={780}
       onClose={onClose}
       open={open}
     >

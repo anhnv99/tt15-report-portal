@@ -142,7 +142,8 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
     try {
       setPreviewLoading(true);
       const rows = await importApi.previewTempoTable({ tableName, limit: 50 });
-      setPreviewRows(rows || []);
+      const rowsWithKey = (rows || []).map((r: any, idx: number) => ({ _rowId: r.pk_id ?? r.id ?? `row_${idx}`, ...r }));
+      setPreviewRows(rowsWithKey);
     } catch (err) {
       console.error('Error previewing table:', err);
       setPreviewRows([]);
@@ -267,11 +268,11 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
       {/* BI Sync & Auto-Batch Trigger Card */}
       <Card
         style={{ marginBottom: 16, borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}
-        bodyStyle={{ padding: '12px 16px' }}
+        styles={{ body: { padding: '12px 16px' } }}
       >
         <Row justify="space-between" align="middle" gutter={[16, 12]}>
           <Col xs={24} lg={13}>
-            <Space direction="vertical" size={2}>
+            <Space orientation="vertical" size={2}>
               <Space>
                 <DatabaseOutlined style={{ color: '#722ED1', fontSize: 16 }} />
                 <Text strong style={{ color: '#1E293B', fontSize: 14 }}>
@@ -385,7 +386,7 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
           </Space>
         }
         placement="bottom"
-        height="70%"
+        size="70%"
         open={previewDrawerOpen}
         onClose={() => setPreviewDrawerOpen(false)}
       >
@@ -398,7 +399,7 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
           <Table
             columns={previewColumns}
             dataSource={previewRows}
-            rowKey={(r, idx) => r.pk_id || idx || Math.random()}
+            rowKey="_rowId"
             pagination={{ pageSize: 10 }}
             scroll={{ x: 'max-content' }}
             size="small"

@@ -97,4 +97,7 @@ export const catalogApi = {
 
   deleteTemplateRule: (reportCode: string, ruleId: number) =>
     apiClient.delete(`/report-templates/${reportCode}/rules/${ruleId}`),
+
+  executeRules: (data: any) =>
+    apiClient.post('/rule-evaluations', data),
 };

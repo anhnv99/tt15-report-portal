@@ -67,6 +67,7 @@ export interface ReportTemplate {
   isActive?: boolean;
   version?: number;
   targetDestination?: 'CIC' | 'SBV' | 'PCB' | string;
+  requireMakerChecker?: boolean;
 }
 
 export interface ReportTemplateField {
@@ -173,7 +174,8 @@ export type CicReportStatus = 'DRAFT' | 'APPROVED' | 'SUBMITTED' | 'REJECTED';
 export interface CicReportVersion {
   id: string;
   reportCode: string;
-  dataPeriodCode: string;
+  dataPeriodCode?: string;
+  dataPeriodId?: number | string;
   versionNumber: number;
   status: CicReportStatus;
   aggregationId: string;
