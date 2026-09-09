@@ -84,7 +84,13 @@ export const reportingApi = {
   approveCicReportVersion: (id: string) =>
     apiClient.post<any, CicReportVersion>(`/cic-report-versions/${id}/approve`),
 
+  approveVersion: (id: string) =>
+    apiClient.post<any, CicReportVersion>(`/cic-report-versions/${id}/approve`),
+
   rejectCicReportVersion: (id: string, reason: string) =>
+    apiClient.post<any, CicReportVersion>(`/cic-report-versions/${id}/reject`, { reason }),
+
+  rejectVersion: (id: string, reason: string) =>
     apiClient.post<any, CicReportVersion>(`/cic-report-versions/${id}/reject`, { reason }),
 
   adjustReportVersion: (versionId: string, formData: FormData) =>

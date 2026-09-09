@@ -266,7 +266,7 @@ export const DashboardPage: React.FC = () => {
 
   const handleApproveReport = async (versionId: string) => {
     try {
-      await reportingApi.approveVersion(versionId);
+      await reportingApi.approveCicReportVersion(versionId);
       message.success('Đã phê duyệt phiên bản báo cáo thành công!');
       loadAllDashboardData();
     } catch (err: any) {
