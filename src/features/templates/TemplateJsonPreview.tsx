@@ -10,7 +10,6 @@ import {
   Typography,
   Select,
   Input,
-  Alert,
   Spin,
   message,
 } from 'antd';
@@ -24,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import type { ReportTemplate, ReportTemplateField } from '@/types';
 import { generateJsonSample } from './utils/jsonTemplateGenerator';
+import { ContextualHelp } from '@/components/ContextualHelp';
 
 const { Text } = Typography;
 
@@ -144,16 +144,10 @@ export const TemplateJsonPreview: React.FC<TemplateJsonPreviewProps> = ({
                   <span>Cấu Trúc JSON Chuẩn Phụ Lục II (Mẫu {activeTemplate?.templateNumber} - {selectedCode})</span>
                 </Space>
               }
+              extra={<ContextualHelp inline content="Cấu trúc bên dưới được sinh chuẩn hoá từ cây phân cấp (rootStructure) và danh mục chỉ tiêu Phụ lục I. Có thể sao chép để đối chiếu với quy cách kỹ thuật QĐ 573 / TT15." />}
               style={{ borderRadius: 8, height: '100%' }}
               styles={{ body: { padding: 12 } }}
             >
-              <Alert
-                type="info"
-                showIcon
-                message="Quy cách đóng gói JSON theo QĐ 573 / TT15:"
-                description="Cấu trúc bên dưới được sinh chuẩn hoá từ cây phân cấp (rootStructure) và danh mục chỉ tiêu Phụ lục I. Nghiệp vụ có thể copy để đối chiếu với tài liệu quy cách kỹ thuật."
-                style={{ marginBottom: 12 }}
-              />
               <div
                 style={{
                   background: '#0F172A',

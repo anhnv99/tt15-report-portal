@@ -460,3 +460,244 @@ export const downloadMultiSheetExcelTemplate = async (
     });
   }
 };
+
+/**
+ * Đọc thông tin tệp Excel người dùng tải lên để hiển thị preview an toàn
+ */
+export const inspectUploadedExcelFile = async (
+  file: File
+): Promise<{ sheetNames: string[]; rowCount: number; fileName: string; fileSizeKb: number }> => {
+  const data = await file.arrayBuffer();
+  const wb = XLSX.read(data, { type: 'array' });
+  const sheetNames = wb.SheetNames || [];
+  let totalRows = 0;
+  if (sheetNames.length > 0) {
+    const firstSheet = wb.Sheets[sheetNames[0]];
+    if (firstSheet) {
+      const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+      totalRows = json.length;
+    }
+  }
+  return {
+    sheetNames,
+    rowCount: totalRows,
+    fileName: file.name,
+    fileSizeKb: Math.round(file.size / 1024),
+  };
+};
+
+/**
+ * Tải file biểu mẫu Excel chuẩn của Ngân hàng Nhà nước (SBV) (.xlsx)
+ * Hỗ trợ linh hoạt cho cả Biểu mẫu Rủi ro tín dụng (Thông tư 41/2026) và Cân đối tài khoản (TT 35/2015).
+ */
+export const downloadSbvOfficialExcelTemplate = async (
+  reportCode: string,
+  template?: ReportTemplate | null,
+  cachedFields?: ReportTemplateField[]
+) => {
+  try {
+    message.loading({
+      content: `Đang kết xuất biểu mẫu Excel NHNN chuẩn cho ${reportCode}...`,
+      key: 'dl_sbv_excel',
+    });
+
+    let fields = cachedFields;
+    if (!fields || fields.length === 0) {
+      try {
+        fields = await catalogApi.getTemplateFields(reportCode);
+      } catch {
+        fields = [];
+      }
+    }
+
+    const isCreditRisk =
+      (reportCode || '').toUpperCase().startsWith('A') ||
+      (template?.reportName || '').toLowerCase().includes('tín dụng') ||
+      (template?.reportName || '').toLowerCase().includes('dư nợ') ||
+      (template?.reportName || '').toLowerCase().includes('nợ xấu') ||
+      (template?.reportName || '').toLowerCase().includes('giám sát') ||
+      (template?.reportName || '').toLowerCase().includes('qlgs');
+
+    const wb = XLSX.utils.book_new();
+    const safeSheetName = `${reportCode.replace(/[^a-zA-Z0-9_-]/g, '_')}_SBV`.slice(0, 31);
+
+    const headers = isCreditRisk
+      ? [
+          'STT',
+          'Mã chỉ tiêu / Mã tài khoản',
+          'Tên chỉ tiêu báo cáo / Phân loại rủi ro',
+          'Vị trí Cột/Ô Mapping',
+          'Dư nợ ngắn hạn (VND)',
+          'Dư nợ trung dài hạn (VND)',
+          'Tổng dư nợ (VND)',
+          'Nợ cần chú ý (Nhóm 2)',
+          'Nợ xấu (Nhóm 3 - 5)',
+          'Bảng nguồn Staging (ETL)',
+        ]
+      : [
+          'STT',
+          'Số hiệu TK / Mã chỉ tiêu',
+          'Tên tài khoản / Diễn giải chỉ tiêu',
+          'Vị trí Cột/Ô Mapping',
+          'Số dư Nợ đầu kỳ',
+          'Số dư Có đầu kỳ',
+          'Doanh số phát sinh Nợ',
+          'Doanh số phát sinh Có',
+          'Số dư Nợ cuối kỳ',
+          'Số dư Có cuối kỳ',
+          'Bảng nguồn Staging (ETL)',
+        ];
+
+    const defaultStaging = isCreditRisk ? 'tempo_sbv_credit_risk' : 'tempo_sbv_candotk';
+
+    // Chuẩn bị dữ liệu bảng tính theo form biểu mẫu SBV
+    const rows: (string | number)[][] = [
+      ['NGÂN HÀNG NHÀ NƯỚC VIỆT NAM'],
+      ['ĐƠN VỊ BÁO CÁO: CÔNG TY TÀI CHÍNH TNHH AEON FINANCE'],
+      [`BIỂU MẪU: ${reportCode} - ${template?.reportName || (isCreditRisk ? 'BÁO CÁO RỦI RO TÍN DỤNG NHNN' : 'BÁO CÁO CÂN ĐỐI TÀI KHOẢN KẾ TOÁN')}`],
+      [`Căn cứ: ${template?.sourceReference || 'Thông tư 41/2026/TT-NHNN & TT 35/2015/TT-NHNN'} | Đơn vị tiền tệ: VND | Trạng thái: Biểu mẫu chính thức`],
+      [], // Dòng trống ngăn cách
+      headers,
+    ];
+
+    if (fields && fields.length > 0) {
+      fields.forEach((f, idx) => {
+        const stagingTable = f.sourceReference?.includes('tempo_') ? f.sourceReference.split(' - ')[1] || defaultStaging : defaultStaging;
+        const displayName = f.sourceReference ? f.sourceReference.replace(/ - tempo_.*$/, '') : `Chỉ tiêu ${f.indicatorCode}`;
+        if (isCreditRisk) {
+          rows.push([
+            idx + 1,
+            f.indicatorCode,
+            displayName,
+            f.jsonPath || `ROW_${String(idx + 7).padStart(2, '0')}:COL_D_I`,
+            0,
+            0,
+            0,
+            0,
+            0,
+            stagingTable,
+          ]);
+        } else {
+          rows.push([
+            idx + 1,
+            f.indicatorCode,
+            displayName,
+            f.jsonPath || `ROW_${String(idx + 7).padStart(2, '0')}:COL_D_I`,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            stagingTable,
+          ]);
+        }
+      });
+      // Dòng Tổng Cộng
+      const totalRowIdx = rows.length;
+      if (isCreditRisk) {
+        rows.push([
+          '',
+          'CỘNG',
+          'TỔNG CỘNG TOÀN HỆ THỐNG',
+          'SUM',
+          `=SUM(E7:E${totalRowIdx})`,
+          `=SUM(F7:F${totalRowIdx})`,
+          `=SUM(G7:G${totalRowIdx})`,
+          `=SUM(H7:H${totalRowIdx})`,
+          `=SUM(I7:I${totalRowIdx})`,
+          'Cân đối tổng thể',
+        ]);
+      } else {
+        rows.push([
+          '',
+          'CỘNG',
+          'TỔNG CỘNG CÂN ĐỐI TOÀN HỆ THỐNG',
+          'SUM',
+          `=SUM(E7:E${totalRowIdx})`,
+          `=SUM(F7:F${totalRowIdx})`,
+          `=SUM(G7:G${totalRowIdx})`,
+          `=SUM(H7:H${totalRowIdx})`,
+          `=SUM(I7:I${totalRowIdx})`,
+          `=SUM(J7:J${totalRowIdx})`,
+          'Cân đối tổng thể (Hệ số chênh lệch = 0)',
+        ]);
+      }
+    } else {
+      // Dòng hướng dẫn nếu chưa có fields (chờ cấu hình ma trận STTM)
+      if (isCreditRisk) {
+        rows.push([
+          1,
+          'A1.001.01',
+          '[Mẫu khung tham khảo] Dư nợ cho vay theo phân loại rủi ro tín dụng',
+          'ROW_07:COL_D_I',
+          0,
+          0,
+          0,
+          0,
+          0,
+          'tempo_sbv_credit_risk',
+        ]);
+      } else {
+        rows.push([
+          1,
+          '1011',
+          'Tiền mặt tại quỹ bằng đồng Việt Nam',
+          'ROW_07:COL_D_I',
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          'tempo_b01_candotk',
+        ]);
+      }
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Cấu hình độ rộng cột trực quan
+    ws['!cols'] = isCreditRisk
+      ? [
+          { wch: 6 },  // STT
+          { wch: 26 }, // Mã chỉ tiêu
+          { wch: 48 }, // Tên chỉ tiêu
+          { wch: 22 }, // Vị trí mapping
+          { wch: 22 }, // Dư nợ ngắn hạn
+          { wch: 24 }, // Dư nợ trung dài hạn
+          { wch: 20 }, // Tổng dư nợ
+          { wch: 22 }, // Nợ nhóm 2
+          { wch: 22 }, // Nợ xấu nhóm 3-5
+          { wch: 26 }, // Bảng nguồn Staging
+        ]
+      : [
+          { wch: 6 },  // STT
+          { wch: 22 }, // Mã chỉ tiêu
+          { wch: 45 }, // Tên chỉ tiêu
+          { wch: 22 }, // Vị trí mapping
+          { wch: 18 }, // Dư Nợ đầu kỳ
+          { wch: 18 }, // Dư Có đầu kỳ
+          { wch: 20 }, // Phát sinh Nợ
+          { wch: 20 }, // Phát sinh Có
+          { wch: 18 }, // Dư Nợ cuối kỳ
+          { wch: 18 }, // Dư Có cuối kỳ
+          { wch: 28 }, // Nguồn Staging
+        ];
+
+    XLSX.utils.book_append_sheet(wb, ws, safeSheetName);
+    const fileName = `Mau_Bieu_${reportCode}_SBV_Chuan_NHNN.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    message.success({
+      content: `Đã tải xuống biểu mẫu Excel NHNN thành công: ${fileName} (${fields.length} dòng mapping)`,
+      key: 'dl_sbv_excel',
+    });
+  } catch (err) {
+    console.error('Lỗi xuất biểu mẫu SBV Excel:', err);
+    message.error({
+      content: 'Không thể kết xuất biểu mẫu Excel NHNN',
+      key: 'dl_sbv_excel',
+    });
+  }
+};

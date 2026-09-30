@@ -1,8 +1,9 @@
-import React from 'react';
-import { Table, Tag, Button, Space, Typography, Row, Col, Select, Popconfirm, Card } from 'antd';
-import { PlusOutlined, DeleteOutlined, FolderOutlined } from '@ant-design/icons';
+import React, { useMemo, useState } from 'react';
+import { Table, Tag, Button, Typography, Select, Popconfirm, Input } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { DanhMucCode } from '@/types';
+import { OperationalFilterBar } from '@/components/OperationalFilterBar';
 
 const { Text } = Typography;
 
@@ -23,6 +24,8 @@ export const DanhMucCodesTab: React.FC<DanhMucCodesTabProps> = ({
   onOpenCreateCode,
   onDeleteCode,
 }) => {
+  const [searchText, setSearchText] = useState('');
+  const [status, setStatus] = useState<string | undefined>();
   const codeLists = [
     { code: 'BRANCH_CODE', name: 'Mã Chi Nhánh TCTD (CITAD NHNN)' },
     { code: 'CURRENCY_CODE', name: 'Mã Loại Tiền Tệ (ISO 4217)' },
@@ -31,6 +34,16 @@ export const DanhMucCodesTab: React.FC<DanhMucCodesTabProps> = ({
     { code: 'LOAN_PURPOSE', name: 'Mục Đích Vay Vốn (QĐ 573)' },
     { code: 'COLLATERAL_TYPE', name: 'Phân Loại Tài Sản Bảo Đảm (QĐ 573)' },
   ];
+  const filteredCodes = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    return codes.filter((item) => {
+      const matchesKeyword = !keyword || `${item.code} ${item.name} ${item.symbol || ''} ${item.parentCode || ''}`
+        .toLowerCase()
+        .includes(keyword);
+      const matchesStatus = !status || (status === 'ACTIVE' ? item.active !== false : item.active === false);
+      return matchesKeyword && matchesStatus;
+    });
+  }, [codes, searchText, status]);
 
   const columns: ColumnsType<DanhMucCode> = [
     {
@@ -90,12 +103,9 @@ export const DanhMucCodesTab: React.FC<DanhMucCodesTabProps> = ({
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }} gutter={[16, 16]}>
-        <Col xs={24} md={14}>
-          <Space align="center" wrap>
-            <Text strong style={{ fontSize: 13 }}>
-              Chọn Bộ Danh Mục Dùng Chung:
-            </Text>
+      <OperationalFilterBar
+        filters={(
+          <>
             <Select
               value={selectedListCode}
               onChange={onSelectListCode}
@@ -107,9 +117,15 @@ export const DanhMucCodesTab: React.FC<DanhMucCodesTabProps> = ({
                 </Select.Option>
               ))}
             </Select>
-          </Space>
-        </Col>
-        <Col xs={24} md={10} style={{ textAlign: 'right' }}>
+            <Input.Search allowClear placeholder="Tìm mã, tên, ký hiệu" value={searchText} onChange={(event) => setSearchText(event.target.value)} style={{ width: 230 }} />
+            <Select allowClear placeholder="Trạng thái" value={status} onChange={setStatus} style={{ width: 130 }} options={[
+              { value: 'ACTIVE', label: 'Hoạt động' },
+              { value: 'INACTIVE', label: 'Khóa' },
+            ]} />
+            <Text strong style={{ fontSize: 13 }}>Kết quả: {filteredCodes.length}</Text>
+          </>
+        )}
+        actions={(
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -118,12 +134,12 @@ export const DanhMucCodesTab: React.FC<DanhMucCodesTabProps> = ({
           >
             Thêm Mã Mới Vào Danh Mục
           </Button>
-        </Col>
-      </Row>
+        )}
+      />
 
       <Table
         columns={columns}
-        dataSource={codes}
+        dataSource={filteredCodes}
         rowKey="code"
         loading={loading}
         pagination={{ pageSize: 10 }}

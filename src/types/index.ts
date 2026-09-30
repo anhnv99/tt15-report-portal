@@ -46,6 +46,8 @@ export interface DanhMucCode {
   code: string;
   name: string;
   description?: string;
+  symbol?: string;
+  parentCode?: string;
   active?: boolean;
   sortOrder?: number;
 }
@@ -174,6 +176,7 @@ export type CicReportStatus = 'DRAFT' | 'APPROVED' | 'SUBMITTED' | 'REJECTED';
 export interface CicReportVersion {
   id: string;
   reportCode: string;
+  targetDestination?: 'CIC' | 'SBV' | 'PCB' | string;
   dataPeriodCode?: string;
   dataPeriodId?: number | string;
   versionNumber: number;
@@ -213,6 +216,25 @@ export interface ReportArtifact {
   checksumSha256?: string;
   downloadUrl?: string;
   createdAt?: string;
+}
+
+export interface ReportAdjustmentAudit {
+  sheetCode: string;
+  lineCode: string;
+  columnCode: string;
+  oldValue?: number;
+  newValue?: number;
+  changeType: 'MANUAL' | 'FORMULA';
+  reason: string;
+  changedBy: string;
+  changedAt: string;
+}
+
+export interface ReportVersionFormula {
+  sheetCode: string;
+  lineCode: string;
+  columnCode: string;
+  expression: string;
 }
 
 export interface ValidationResult {

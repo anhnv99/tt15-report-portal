@@ -1,7 +1,8 @@
 import React from 'react';
-import { Drawer, Spin, Table, Tag, Typography, Alert, Empty } from 'antd';
+import { Drawer, Spin, Table, Tag, Typography, Empty, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { AggregationSourceBatch } from '@/types';
+import { ContextualHelp } from '@/components/ContextualHelp';
 
 const { Text } = Typography;
 
@@ -64,21 +65,22 @@ export const AggregationLineageDrawer: React.FC<AggregationLineageDrawerProps> =
 
   return (
     <Drawer
-      title="Nguồn Dữ Liệu Gốc Của Đợt Tổng Hợp (Lineage)"
+      title={
+        <Space>
+          <span>Nguồn Dữ Liệu Gốc Của Đợt Tổng Hợp (Lineage)</span>
+          <ContextualHelp
+            inline
+            label="Hướng dẫn truy vết dữ liệu"
+            content="Danh sách các file/lô dữ liệu đầu vào đã được phê duyệt và sử dụng để tổng hợp thành số liệu báo cáo này."
+          />
+        </Space>
+      }
       placement="right"
       size={780}
       onClose={onClose}
       open={open}
     >
       <Spin spinning={loading}>
-        <Alert
-          message="Truy vết nguồn gốc (Data Lineage):"
-          description="Danh sách các file/lô dữ liệu đầu vào đã được phê duyệt và sử dụng để tổng hợp thành số liệu báo cáo này."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-
         {batches.length === 0 ? (
           <Empty description="Chưa có dữ liệu nguồn hoặc đợt tổng hợp tự động tạo từ hệ thống" />
         ) : (

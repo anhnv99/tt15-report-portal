@@ -1,9 +1,10 @@
 import React from 'react';
-import { Drawer, Spin, Table, Tag, Button, Space, Typography, Alert, Empty } from 'antd';
+import { Drawer, Spin, Table, Tag, Button, Space, Typography, Empty } from 'antd';
 import { DownloadOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { ValidationResult } from '@/types';
 import { reportingApi } from '@/api/reporting.api';
+import { ContextualHelp } from '@/components/ContextualHelp';
 
 const { Text } = Typography;
 
@@ -86,6 +87,11 @@ export const ValidationResultsDrawer: React.FC<ValidationResultsDrawerProps> = (
         <Space>
           <SafetyCertificateOutlined style={{ color: '#003B95' }} />
           <span>Kết Quả Kiểm Tra Validation Rules 3 Cấp ({results.length} vi phạm)</span>
+          <ContextualHelp
+            inline
+            label="Hướng dẫn kiểm tra đối soát"
+            content="Bao gồm kiểm tra định dạng trường Phụ lục I, logic nghiệp vụ nội bộ và đối chiếu chéo giữa các báo cáo theo chuẩn QĐ573."
+          />
         </Space>
       }
       placement="right"
@@ -105,14 +111,6 @@ export const ValidationResultsDrawer: React.FC<ValidationResultsDrawerProps> = (
       }
     >
       <Spin spinning={loading}>
-        <Alert
-          message="Phạm vi kiểm tra đối soát 3-Tier Validation:"
-          description="Bao gồm: Kiểm tra định dạng trường Phụ lục I, Logic nghiệp vụ nội bộ báo cáo, và Đối chiếu chéo giữa các báo cáo theo chuẩn QĐ573."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-
         {results.length === 0 ? (
           <Empty description="Tuyệt vời! Không phát hiện lỗi hoặc vi phạm dữ liệu nào." />
         ) : (

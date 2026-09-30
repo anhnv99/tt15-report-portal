@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
-import { Table, Tag, Button, Space, Typography, Row, Col, Card, Dropdown } from 'antd';
+import { Table, Tag, Button, Space, Typography, Row, Col, Card } from 'antd';
 import {
   SendOutlined,
   RedoOutlined,
-  DownOutlined,
   BankOutlined,
   SafetyCertificateOutlined,
   GlobalOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { ReportDelivery, CicReportVersion } from '@/types';
+import { getReportDestinationProfile } from '@/features/reporting-destinations/profiles';
+import { getVersionDestinationProfile, normalizeReportDestination } from '@/features/reporting-destinations/resolveReportDestination';
 
 const { Text } = Typography;
 
@@ -30,6 +31,16 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
   onRetry,
   onSendApprovedVersion,
 }) => {
+  const renderDestinationTag = (destination?: string) => {
+    const profile = getReportDestinationProfile(normalizeReportDestination(destination));
+    const icon = profile.id === 'SBV'
+      ? <SafetyCertificateOutlined />
+      : profile.id === 'PCB'
+        ? <GlobalOutlined />
+        : <BankOutlined />;
+    return <Tag color={profile.tagColor} icon={icon}>{profile.deliveryLabel}</Tag>;
+  };
+
   const getDeliveryStatusColor = (status: string) => {
     switch (status) {
       case 'DELIVERED':
@@ -92,12 +103,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
       dataIndex: 'destination',
       key: 'destination',
       width: 140,
-      render: (dest) => {
-        const d = (dest || 'CIC').toUpperCase();
-        if (d.includes('SBV') || d.includes('SVB')) return <Tag color="green" icon={<SafetyCertificateOutlined />}>SBV (NHNN)</Tag>;
-        if (d.includes('PCB')) return <Tag color="orange" icon={<GlobalOutlined />}>PCB</Tag>;
-        return <Tag color="blue" icon={<BankOutlined />}>CIC (H2H)</Tag>;
-      },
+      render: (dest) => renderDestinationTag(dest),
     },
     {
       title: 'Trạng Thái',
@@ -135,7 +141,7 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
       render: (_, r) => <Tag>{r.attemptCount ?? r.retryCount ?? 0} lần</Tag>,
     },
     {
-      title: 'Mã Tiếp Nhận CIC / Phản Hồi Webhook',
+      title: 'Mã Tiếp Nhận / Phản Hồi Webhook',
       key: 'receiptReference',
       width: 250,
       render: (_, row) => {
@@ -245,33 +251,26 @@ export const ReportDeliveriesTab: React.FC<ReportDeliveriesTabProps> = ({
           <Row justify="space-between" align="middle">
             <Col>
               <Text strong style={{ color: '#166534' }}>
-                Có {pendingApprovedVersions.length} phiên bản báo cáo đã được phê duyệt sẵn sàng nộp sang CIC:
+                Có {pendingApprovedVersions.length} phiên bản báo cáo đã được phê duyệt, sẵn sàng nộp đến đúng cổng tiếp nhận:
               </Text>
             </Col>
             <Col>
               <Space>
-                {pendingApprovedVersions.slice(0, 3).map((v) => (
-                  <Dropdown
-                    key={v.id}
-                    menu={{
-                      items: [
-                        { key: 'CIC', label: 'Nộp sang CIC (H2H)', icon: <BankOutlined /> },
-                        { key: 'SBV', label: 'Nộp sang SBV (NHNN)', icon: <SafetyCertificateOutlined /> },
-                        { key: 'PCB', label: 'Nộp sang PCB', icon: <GlobalOutlined /> },
-                      ],
-                      onClick: ({ key }) => onSendApprovedVersion(v, key),
-                    }}
-                  >
+                {pendingApprovedVersions.slice(0, 3).map((v) => {
+                  const profile = getVersionDestinationProfile(v);
+                  return (
                     <Button
+                      key={v.id}
                       size="small"
                       type="primary"
                       icon={<SendOutlined />}
                       style={{ background: '#16A34A' }}
+                      onClick={() => onSendApprovedVersion(v, profile.id)}
                     >
-                      Nộp v{v.versionNumber} ({v.fileName || 'Báo cáo'}) <DownOutlined />
+                      Nộp v{v.versionNumber} đến {profile.label}
                     </Button>
-                  </Dropdown>
-                ))}
+                  );
+                })}
               </Space>
             </Col>
           </Row>

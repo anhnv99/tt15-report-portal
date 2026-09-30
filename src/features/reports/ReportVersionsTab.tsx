@@ -8,11 +8,13 @@ import {
   History,
   FileText,
   Send,
+  FileSpreadsheet,
 } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { CicReportVersion } from '@/types';
 
 import { getStandardReportFileName } from '@/utils/reportFileNameHelper';
+import { getVersionDestinationProfile, resolveVersionDestination } from '@/features/reporting-destinations/resolveReportDestination';
 
 const { Text } = Typography;
 
@@ -62,29 +64,37 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
       render: (v) => <Text strong style={{ color: '#003B95' }}>v{v}</Text>,
     },
     {
-      title: 'Tên File Báo Cáo Chuẩn QĐ573',
+      title: 'Tên File Báo Cáo Chính Thức',
       key: 'fileName',
       width: 360,
       render: (_, r) => {
-        const autoName = r.fileName || getStandardReportFileName(r.reportCode, r.reportingDate, r.versionNumber, '79301001', 'json');
+        const profile = getVersionDestinationProfile(r);
+        const isWorkbookReport = profile.supportsExcelMapping;
+        const autoName =
+          r.fileName ||
+          (isWorkbookReport
+            ? `${r.reportCode}_79301001_${(r.reportingDate || '').replace(/-/g, '')}.v${r.versionNumber}.xlsx`
+            : getStandardReportFileName(r.reportCode, r.reportingDate, r.versionNumber, '79301001', profile.defaultArtifactExtension));
         return (
           <Space style={{ whiteSpace: 'nowrap' }}>
-            <FileText size={16} color="#003B95" />
-            <Text
-              strong
-              copyable={{ text: autoName }}
-              style={{
-                fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                fontSize: 13,
-                color: '#0F172A',
-                background: '#F1F5F9',
-                padding: '2px 8px',
-                borderRadius: 4,
-                border: '1px solid #E2E8F0',
-              }}
-            >
-              {autoName}
-            </Text>
+            {isWorkbookReport ? <FileSpreadsheet size={16} color="#059669" /> : <FileText size={16} color="#003B95" />}
+            <Tooltip title={profile.artifactDescription}>
+              <Text
+                strong
+                copyable={{ text: autoName }}
+                style={{
+                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  fontSize: 13,
+                  color: isWorkbookReport ? '#065F46' : '#0F172A',
+                  background: isWorkbookReport ? '#ECFDF5' : '#F1F5F9',
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  border: isWorkbookReport ? '1px solid #A7F3D0' : '1px solid #E2E8F0',
+                }}
+              >
+                {autoName}
+              </Text>
+            </Tooltip>
           </Space>
         );
       },
@@ -153,7 +163,7 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
                 <Tooltip title="Phê duyệt phiên bản báo cáo này">
                   <Popconfirm
                     title="Phê duyệt phiên bản báo cáo này?"
-                    description="Sau khi phê duyệt, phiên bản sẽ sẵn sàng để đóng gói gửi sang cổng truyền nhận CIC/NHNN."
+                    description="Sau khi phê duyệt, phiên bản sẵn sàng được đóng gói và gửi đến đúng cổng tiếp nhận của biểu mẫu."
                     onConfirm={() => onApprove(r.id)}
                     okText="Duyệt"
                     cancelText="Hủy"
@@ -182,20 +192,20 @@ export const ReportVersionsTab: React.FC<ReportVersionsTabProps> = ({
             )}
 
             {r.status === 'APPROVED' && isEnabled && onSend && (
-              <Tooltip title="Nộp phiên bản này sang cổng CIC (H2H)">
+              <Tooltip title={`Nộp phiên bản này sang ${getVersionDestinationProfile(r).deliveryLabel}`}>
                 <Button
                   type="primary"
                   shape="circle"
                   size="small"
                   icon={<Send size={14} />}
                   style={{ background: '#003B95', borderColor: '#003B95', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                  onClick={() => onSend(r, 'CIC')}
+                  onClick={() => onSend(r, resolveVersionDestination(r))}
                 />
               </Tooltip>
             )}
 
-            {onOpenAdjust && r.status !== 'APPROVED' && isEnabled && (
-              <Tooltip title="Điều chỉnh số liệu báo cáo từ Excel">
+            {onOpenAdjust && getVersionDestinationProfile(r).supportsWorkbookAdjustment && r.status !== 'APPROVED' && isEnabled && (
+              <Tooltip title="Điều chỉnh workbook SBV và tính lại các dòng tổng">
                 <Button
                   shape="circle"
                   size="small"

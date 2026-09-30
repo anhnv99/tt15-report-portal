@@ -1,9 +1,10 @@
-import React from 'react';
-import { Table, Tag, Button, Space, Typography, Popconfirm, Row, Col, Tooltip } from 'antd';
-import { PlusOutlined, ThunderboltOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
+import React, { useMemo, useState } from 'react';
+import { Table, Tag, Button, Typography, Popconfirm, Tooltip, Input, Select } from 'antd';
+import { PlusOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { Lock, Unlock } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { DataPeriod } from '@/types';
+import { OperationalFilterBar } from '@/components/OperationalFilterBar';
 
 const { Text } = Typography;
 
@@ -22,6 +23,25 @@ export const DataPeriodsTab: React.FC<DataPeriodsTabProps> = ({
   onOpenGenerate,
   onToggleClose,
 }) => {
+  const [searchText, setSearchText] = useState('');
+  const [periodType, setPeriodType] = useState<string | undefined>();
+  const [status, setStatus] = useState<string | undefined>();
+  const periodTypeOptions = useMemo(
+    () => [...new Set(periods.map((period) => period.periodType).filter(Boolean))]
+      .sort()
+      .map((value) => ({ value, label: value })),
+    [periods],
+  );
+  const filteredPeriods = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    return periods.filter((period) => {
+      const matchesKeyword = !keyword || `${period.code} ${period.name}`.toLowerCase().includes(keyword);
+      const matchesType = !periodType || period.periodType === periodType;
+      const matchesStatus = !status || (status === 'OPEN' ? !period.closed : period.closed);
+      return matchesKeyword && matchesType && matchesStatus;
+    });
+  }, [periods, periodType, searchText, status]);
+
   const columns: ColumnsType<DataPeriod> = [
     {
       title: 'Mã Kỳ',
@@ -34,6 +54,7 @@ export const DataPeriodsTab: React.FC<DataPeriodsTabProps> = ({
       title: 'Tên Kỳ Dữ Liệu',
       dataIndex: 'name',
       key: 'name',
+      width: 320,
       render: (n) => <Text strong>{n}</Text>,
     },
     {
@@ -123,14 +144,20 @@ export const DataPeriodsTab: React.FC<DataPeriodsTabProps> = ({
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-        <Col>
-          <Text strong style={{ fontSize: 14 }}>
-            Danh Sách Các Kỳ Dữ Liệu Báo Cáo ({periods.length}):
-          </Text>
-        </Col>
-        <Col>
-          <Space>
+      <OperationalFilterBar
+        filters={(
+          <>
+            <Input.Search allowClear placeholder="Tìm mã hoặc tên kỳ" value={searchText} onChange={(event) => setSearchText(event.target.value)} style={{ width: 240 }} />
+            <Select allowClear placeholder="Loại kỳ" value={periodType} onChange={setPeriodType} options={periodTypeOptions} style={{ width: 160 }} />
+            <Select allowClear placeholder="Trạng thái" value={status} onChange={setStatus} style={{ width: 150 }} options={[
+              { value: 'OPEN', label: 'Đang mở' },
+              { value: 'CLOSED', label: 'Đã đóng sổ' },
+            ]} />
+            <Text strong style={{ fontSize: 13 }}>Kết quả: {filteredPeriods.length}</Text>
+          </>
+        )}
+        actions={(
+          <>
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -145,16 +172,18 @@ export const DataPeriodsTab: React.FC<DataPeriodsTabProps> = ({
             >
               Khởi Tạo Tự Động Theo Năm
             </Button>
-          </Space>
-        </Col>
-      </Row>
+          </>
+        )}
+      />
 
       <Table
         columns={columns}
-        dataSource={periods}
+        dataSource={filteredPeriods}
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 12 }}
+        scroll={{ x: 1300 }}
+        tableLayout="fixed"
       />
     </div>
   );

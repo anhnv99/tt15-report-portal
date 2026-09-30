@@ -106,27 +106,39 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                     rowKey="id"
                     pagination={{ pageSize: 5 }}
                     size="small"
+                    scroll={{ x: 880 }}
+                    tableLayout="fixed"
                     columns={[
                       {
                         title: 'Mã Lô',
                         dataIndex: 'batchCode',
                         key: 'batchCode',
                         width: 150,
-                        render: (c, r) => (
-                          <Space orientation="vertical" size={0}>
-                            <AntText strong style={{ color: '#003B95' }}>
-                              {c}
-                            </AntText>
-                            <Tag color="blue" style={{ fontSize: 10, width: 'fit-content' }}>
-                              {r.importType || 'D10'}
-                            </Tag>
-                          </Space>
-                        ),
+                        render: (c, r) => {
+                          const batchCode = String(c || r.id || '-');
+                          return (
+                            <Space orientation="vertical" size={0} style={{ maxWidth: 130 }}>
+                              <AntText
+                                code
+                                strong
+                                copyable={{ text: batchCode, tooltips: ['Sao chép mã lô', 'Đã sao chép'] }}
+                                ellipsis={{ tooltip: batchCode }}
+                                style={{ display: 'block', maxWidth: 120, fontSize: 12, color: '#003B95' }}
+                              >
+                                {batchCode}
+                              </AntText>
+                              <Tag color="blue" style={{ fontSize: 12, width: 'fit-content' }}>
+                                {r.importType || 'D10'}
+                              </Tag>
+                            </Space>
+                          );
+                        },
                       },
                       {
                         title: 'Tên Tệp Nguồn',
                         dataIndex: 'originalFileName',
                         key: 'originalFileName',
+                        width: 220,
                         render: (f, r) => f || r.fileName || '-',
                       },
                       {
@@ -200,6 +212,8 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                     rowKey="id"
                     pagination={{ pageSize: 5 }}
                     size="small"
+                    scroll={{ x: 1500 }}
+                    tableLayout="fixed"
                     columns={[
                       {
                         title: 'Mã Biểu Mẫu',
@@ -211,7 +225,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                             <AntText strong style={{ color: '#003B95', fontSize: 13 }}>
                               {c}
                             </AntText>
-                            <Tag color="blue" style={{ fontSize: 10, margin: 0 }}>TT15/NHNN</Tag>
+                            <Tag color="blue" style={{ fontSize: 12, margin: 0 }}>TT15/NHNN</Tag>
                           </Space>
                         ),
                       },
@@ -223,11 +237,11 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                           const p = periods.find((item) => item.id === r.dataPeriodId || item.code === String(r.dataPeriodId));
                           return (
                             <div>
-                              <AntText strong style={{ fontSize: 12 }}>
+                              <AntText strong style={{ fontSize: 13 }}>
                                 {p?.name || `Kỳ ${r.reportingDate || r.dataPeriodId}`}
                               </AntText>
-                              <div style={{ fontSize: 11, color: '#64748B' }}>
-                                Mã kỳ: <AntText code style={{ fontSize: 11 }}>{p?.code || r.dataPeriodId}</AntText>
+                              <div style={{ fontSize: 12, color: '#64748B' }}>
+                                Mã kỳ: <AntText code style={{ fontSize: 12 }}>{p?.code || r.dataPeriodId}</AntText>
                               </div>
                             </div>
                           );
@@ -240,7 +254,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         render: (_, r) => (
                           <Space orientation="vertical" size={2}>
                             <Tag color="purple" style={{ fontWeight: 600 }}>v{r.versionNumber}</Tag>
-                            <span style={{ fontSize: 11, color: '#64748B' }}>
+                            <span style={{ fontSize: 12, color: '#64748B' }}>
                               Ngày BC: {r.reportingDate || '-'}
                             </span>
                           </Space>
@@ -249,15 +263,21 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                       {
                         title: 'Gói Tin Dự Kiến (QĐ573)',
                         key: 'expectedFile',
+                        width: 320,
                         render: (_, r) => {
                           const cleanDate = (r.reportingDate || '').replace(/[^0-9]/g, '') || '20260930';
                           const fileName = `CIC_${r.reportCode}_${cleanDate}_v${r.versionNumber}.xml`;
                           return (
-                            <Space orientation="vertical" size={0}>
-                              <AntText code style={{ fontSize: 11, color: '#0F172A' }}>
+                            <Space orientation="vertical" size={0} style={{ maxWidth: 190 }}>
+                              <AntText
+                                code
+                                copyable={{ text: fileName, tooltips: ['Sao chép mã gói tin', 'Đã sao chép'] }}
+                                ellipsis={{ tooltip: fileName }}
+                                style={{ display: 'block', maxWidth: 180, fontSize: 12, color: '#0F172A' }}
+                              >
                                 {fileName}
                               </AntText>
-                              <span style={{ fontSize: 10, color: '#10B981' }}>Chuẩn phân cấp Phụ lục II</span>
+                              <span style={{ fontSize: 12, color: '#10B981' }}>Chuẩn phân cấp Phụ lục II</span>
                             </Space>
                           );
                         },
@@ -366,7 +386,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                             <AntText strong style={{ color: '#003B95', fontSize: 13 }}>
                               {c}
                             </AntText>
-                            <Tag color="green" style={{ fontSize: 10, margin: 0 }}>ĐÃ DUYỆT</Tag>
+                            <Tag color="green" style={{ fontSize: 12, margin: 0 }}>ĐÃ DUYỆT</Tag>
                           </Space>
                         ),
                       },
@@ -378,11 +398,11 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                           const p = periods.find((item) => item.id === r.dataPeriodId || item.code === String(r.dataPeriodId));
                           return (
                             <div>
-                              <AntText strong style={{ fontSize: 12 }}>
+                              <AntText strong style={{ fontSize: 13 }}>
                                 {p?.name || `Kỳ ${r.reportingDate || r.dataPeriodId}`}
                               </AntText>
-                              <div style={{ fontSize: 11, color: '#64748B' }}>
-                                Mã kỳ: <AntText code style={{ fontSize: 11 }}>{p?.code || r.dataPeriodId}</AntText>
+                              <div style={{ fontSize: 12, color: '#64748B' }}>
+                                Mã kỳ: <AntText code style={{ fontSize: 12 }}>{p?.code || r.dataPeriodId}</AntText>
                               </div>
                             </div>
                           );
@@ -455,27 +475,39 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                     rowKey="id"
                     pagination={{ pageSize: 5 }}
                     size="small"
+                    scroll={{ x: 1060 }}
+                    tableLayout="fixed"
                     columns={[
                       {
                         title: 'Mã Lô',
                         dataIndex: 'batchCode',
                         key: 'batchCode',
                         width: 150,
-                        render: (c, r) => (
-                          <Space orientation="vertical" size={0}>
-                            <AntText strong style={{ color: '#DC2626' }}>
-                              {c}
-                            </AntText>
-                            <Tag color={r.status === 'REJECTED' ? 'error' : 'warning'}>
-                              {r.status === 'REJECTED' ? 'Bị Từ Chối' : 'Có Lỗi'}
-                            </Tag>
-                          </Space>
-                        ),
+                        render: (c, r) => {
+                          const batchCode = String(c || r.id || '-');
+                          return (
+                            <Space orientation="vertical" size={0} style={{ maxWidth: 130 }}>
+                              <AntText
+                                code
+                                strong
+                                copyable={{ text: batchCode, tooltips: ['Sao chép mã lô', 'Đã sao chép'] }}
+                                ellipsis={{ tooltip: batchCode }}
+                                style={{ display: 'block', maxWidth: 120, fontSize: 12, color: '#DC2626' }}
+                              >
+                                {batchCode}
+                              </AntText>
+                              <Tag color={r.status === 'REJECTED' ? 'error' : 'warning'}>
+                                {r.status === 'REJECTED' ? 'Bị Từ Chối' : 'Có Lỗi'}
+                              </Tag>
+                            </Space>
+                          );
+                        },
                       },
                       {
                         title: 'Tệp Dữ Liệu',
                         dataIndex: 'originalFileName',
                         key: 'originalFileName',
+                        width: 220,
                         render: (f, r) => f || r.fileName || '-',
                       },
                       {
@@ -496,6 +528,7 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
                         title: 'Lý Do / Ghi Chú',
                         dataIndex: 'rejectionReason',
                         key: 'rejectionReason',
+                        width: 360,
                         render: (n) => n || 'Dữ liệu phát hiện lỗi hoặc chờ Maker bổ sung',
                       },
                       {
@@ -524,3 +557,4 @@ export const DashboardActionBacklog: React.FC<DashboardActionBacklogProps> = ({
     </Card>
   );
 };
+

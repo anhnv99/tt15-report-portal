@@ -5,7 +5,6 @@ import {
   Button,
   Space,
   Typography,
-  Alert,
   Card,
   Row,
   Col,
@@ -23,6 +22,7 @@ import {
 import type { ImportBatch } from '@/types';
 import { importApi } from '@/api/import.api';
 import { downloadMultiSheetExcelTemplate } from './utils/multiSheetTemplateGenerator';
+import { ContextualHelp } from '@/components/ContextualHelp';
 
 const { Text, Paragraph, Title } = Typography;
 const { Dragger } = Upload;
@@ -79,6 +79,7 @@ export const SupplementBatchModal: React.FC<SupplementBatchModalProps> = ({
         <Space>
           <PlusCircleOutlined style={{ color: '#003B95', fontSize: 18 }} />
           <span>Bổ Sung Dữ Liệu Vào Lô ETL #{batch.batchCode || batch.id.substring(0, 8).toUpperCase()}</span>
+          <ContextualHelp inline content="Dùng khi ETL từ Core/DWH chưa đủ dữ liệu. Bản ghi bổ sung sẽ được nạp tiếp nối vào lô này để tiếp tục kiểm soát và tổng hợp báo cáo." />
         </Space>
       }
       open={open}
@@ -100,14 +101,6 @@ export const SupplementBatchModal: React.FC<SupplementBatchModalProps> = ({
         </Button>,
       ]}
     >
-      <Alert
-        type="info"
-        showIcon
-        message="Bổ sung dữ liệu cho quy trình tổng hợp báo cáo"
-        description="Dùng trong trường hợp ETL tự động từ hệ thống Core/DWH chưa đầy đủ dữ liệu. Các bản ghi bổ sung sẽ được nạp tiếp nối vào lô này để tiếp tục quy trình kiểm soát và tổng hợp báo cáo."
-        style={{ marginBottom: 16 }}
-      />
-
       <Card size="small" style={{ marginBottom: 16, background: '#F8FAFC' }}>
         <Row gutter={[16, 8]}>
           <Col span={12}>

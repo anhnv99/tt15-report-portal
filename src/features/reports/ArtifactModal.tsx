@@ -1,12 +1,22 @@
-import React from 'react';
-import { Modal, Button, Table, Tag, Space, Typography, Descriptions, Spin } from 'antd';
+import React, { useState } from 'react';
+import { Alert, Modal, Button, Table, Tag, Space, Typography, Descriptions, Spin, message } from 'antd';
 import { DownloadOutlined, FileZipOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { CicReportVersion, ReportArtifact } from '@/types';
 import { reportingApi } from '@/api/reporting.api';
 import { getStandardReportFileName } from '@/utils/reportFileNameHelper';
+import { getReportDestinationProfile } from '@/features/reporting-destinations/profiles';
+import { getVersionDestinationProfile } from '@/features/reporting-destinations/resolveReportDestination';
 
 const { Text } = Typography;
+
+type ExportReadiness = {
+  ready: boolean;
+  mappingCount: number;
+  snapshotCellCount: number;
+  missingMappedValues: Array<{ sheetCode: string; lineCode: string; columnCode: string }>;
+  unmappedSnapshotCells: Array<{ sheetCode: string; lineCode: string; columnCode: string }>;
+};
 
 interface ArtifactModalProps {
   open: boolean;
@@ -16,6 +26,7 @@ interface ArtifactModalProps {
   generating: boolean;
   onCancel: () => void;
   onGenerate: () => Promise<void>;
+  onExportAdjusted: () => Promise<void>;
 }
 
 export const ArtifactModal: React.FC<ArtifactModalProps> = ({
@@ -26,7 +37,26 @@ export const ArtifactModal: React.FC<ArtifactModalProps> = ({
   generating,
   onCancel,
   onGenerate,
+  onExportAdjusted,
 }) => {
+  const profile = version ? getVersionDestinationProfile(version) : getReportDestinationProfile('CIC');
+  const supportsWorkbookAdjustment = profile.supportsWorkbookAdjustment;
+  const [exportReadiness, setExportReadiness] = useState<ExportReadiness | null>(null);
+  const [readinessVersionId, setReadinessVersionId] = useState<string | null>(null);
+
+  const checkExportReadiness = async () => {
+    if (!version) return;
+    try {
+      const readiness = await reportingApi.getAdjustedSbvExportReadiness(version.id);
+      setExportReadiness(readiness);
+      setReadinessVersionId(version.id);
+      message[readiness.ready ? 'success' : 'warning'](readiness.ready
+        ? 'Version đã sẵn sàng xuất SBV.'
+        : 'Version chưa sẵn sàng xuất. Kiểm tra các ô thiếu bên dưới.');
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || 'Không kiểm tra được điều kiện xuất SBV');
+    }
+  };
   const handleDownloadArtifact = async (artifact: ReportArtifact) => {
     try {
       const res: any = await reportingApi.downloadArtifact(artifact.id);
@@ -103,7 +133,7 @@ export const ArtifactModal: React.FC<ArtifactModalProps> = ({
       title={
         <span>
           <FileZipOutlined style={{ marginRight: 8, color: '#003B95' }} />
-          Tệp Đóng Gói Báo Cáo CIC / SBV (Artifacts)
+          {`Tệp Đóng Gói Báo Cáo ${profile.label}`}
         </span>
       }
       open={open}
@@ -112,6 +142,19 @@ export const ArtifactModal: React.FC<ArtifactModalProps> = ({
         <Button key="close" onClick={onCancel}>
           Đóng
         </Button>,
+        ...(supportsWorkbookAdjustment ? [
+          <Button key="check-export-readiness" onClick={checkExportReadiness}>
+            Kiểm tra trước khi xuất
+          </Button>,
+          <Button
+            key="export-adjusted"
+            icon={<DownloadOutlined />}
+            loading={generating}
+            onClick={onExportAdjusted}
+          >
+            Xuất version điều chỉnh SBV
+          </Button>,
+        ] : []),
         <Button
           key="gen"
           type="primary"
@@ -134,15 +177,29 @@ export const ArtifactModal: React.FC<ArtifactModalProps> = ({
             <Descriptions.Item label="Trạng Thái">
               <Tag color="green">{version.status}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Tên Tệp Đăng Ký (QĐ573)">
+            <Descriptions.Item label={`Tên tệp báo cáo ${profile.label}`}>
               <Text code copyable>
-                {version.fileName || getStandardReportFileName(version.reportCode, version.reportingDate, version.versionNumber, '79301001', 'json')}
+                {version.fileName || getStandardReportFileName(version.reportCode, version.reportingDate, version.versionNumber, '79301001', profile.defaultArtifactExtension)}
               </Text>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày Báo Cáo">
               {version.reportingDate}
             </Descriptions.Item>
           </Descriptions>
+        )}
+
+        {supportsWorkbookAdjustment && exportReadiness && readinessVersionId === version?.id && (
+          <Alert
+            showIcon
+            style={{ marginBottom: 16 }}
+            type={exportReadiness.ready ? 'success' : 'warning'}
+            message={exportReadiness.ready ? 'Đủ điều kiện export SBV' : 'Chưa đủ điều kiện export SBV'}
+            description={exportReadiness.ready
+              ? `${exportReadiness.mappingCount} mapping khớp ${exportReadiness.snapshotCellCount} ô snapshot.`
+              : <>Có {exportReadiness.mappingCount} mapping; thiếu giá trị ở {exportReadiness.missingMappedValues.length} ô mapping và có {exportReadiness.unmappedSnapshotCells.length} ô snapshot chưa mapping.
+                {exportReadiness.missingMappedValues.length > 0 && <><br />Ô thiếu giá trị: {exportReadiness.missingMappedValues.slice(0, 5).map((item) => `${item.sheetCode}.${item.lineCode}.${item.columnCode}`).join(', ')}{exportReadiness.missingMappedValues.length > 5 ? '…' : ''}</>}
+              </>}
+          />
         )}
 
         <Table

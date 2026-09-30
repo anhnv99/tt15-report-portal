@@ -301,16 +301,6 @@ export const DashboardPage: React.FC = () => {
           onNavigateReports={() => navigate('/reports')}
         />
 
-        {/* 3. URGENT BACKLOG & ACTION ITEMS REQUIRED */}
-        <DashboardActionBacklog
-          pendingStats={pendingStats}
-          periods={periods}
-          onNavigateImports={() => navigate('/imports')}
-          onNavigateReports={() => navigate('/reports')}
-          onNavigateReportWithParam={handleNavigateReportWithParam}
-          onApproveReport={handleApproveReport}
-        />
-
         {/* 4. COMPARATIVE BAR & DONUT CHARTS */}
         <DashboardChartsSection
           filteredBatchesCount={filteredBatches.length}
@@ -325,6 +315,16 @@ export const DashboardPage: React.FC = () => {
           pendingStats={pendingStats}
           approvedBatchesCount={filteredBatches.filter((b) => b.status === 'APPROVED').length}
           onNavigateImports={() => navigate('/imports')}
+        />
+
+        {/* 6. URGENT BACKLOG & ACTION ITEMS REQUIRED */}
+        <DashboardActionBacklog
+          pendingStats={pendingStats}
+          periods={periods}
+          onNavigateImports={() => navigate('/imports')}
+          onNavigateReports={() => navigate('/reports')}
+          onNavigateReportWithParam={handleNavigateReportWithParam}
+          onApproveReport={handleApproveReport}
         />
       </Spin>
     </div>

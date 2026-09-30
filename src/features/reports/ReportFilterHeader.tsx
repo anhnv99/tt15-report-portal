@@ -1,8 +1,9 @@
 import React from 'react';
-import { Card, Row, Col, Select, Typography, Space, Tag } from 'antd';
+import { Select, Typography, Space, Tag } from 'antd';
 import type { ReportTemplate, DataPeriod } from '@/types';
+import { getTemplateDestinationProfile } from '@/features/reporting-destinations/resolveReportDestination';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface ReportFilterHeaderProps {
   templates: ReportTemplate[];
@@ -22,18 +23,7 @@ export const ReportFilterHeader: React.FC<ReportFilterHeaderProps> = ({
   onSelectPeriod,
 }) => {
   return (
-    <Card style={{ marginBottom: 16, borderRadius: 8 }}>
-      <Row justify="space-between" align="middle" gutter={[16, 16]}>
-        <Col xs={24} md={12}>
-          <Title level={4} style={{ margin: 0, color: '#002B66' }}>
-            Quản Lý Báo Cáo TT15 / QĐ573 (Maker - Checker Workflow)
-          </Title>
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            Quy trình khép kín: Tổng hợp dữ liệu &rarr; Kiểm tra Rules &rarr; Phê duyệt Maker-Checker &rarr; Đóng gói ZIP &rarr; Truyền nhận CIC.
-          </Text>
-        </Col>
-        <Col xs={24} md={12} style={{ textAlign: 'right' }}>
-          <Space wrap>
+    <>
             <Select
               value={selectedTemplate}
               onChange={onSelectTemplate}
@@ -42,13 +32,12 @@ export const ReportFilterHeader: React.FC<ReportFilterHeaderProps> = ({
               optionFilterProp="children"
             >
               {templates.map((t) => {
-                const dest = (t.targetDestination || 'CIC').toUpperCase();
-                const destColor = dest === 'PCB' ? 'purple' : dest === 'SVB' || dest === 'SBV' ? 'green' : 'blue';
+                const profile = getTemplateDestinationProfile(t);
                 return (
                   <Select.Option key={t.reportCode} value={t.reportCode}>
                     <Space>
-                      <Tag color={destColor} style={{ fontWeight: 600, fontSize: 11, margin: 0 }}>
-                        {dest}
+                      <Tag color={profile.tagColor} style={{ fontWeight: 600, fontSize: 11, margin: 0 }}>
+                        {profile.label}
                       </Tag>
                       <Text strong style={{ color: '#003B95' }}>[{t.reportCode}]</Text>
                       <span>Mẫu {t.templateNumber} - {t.reportName}</span>
@@ -57,7 +46,6 @@ export const ReportFilterHeader: React.FC<ReportFilterHeaderProps> = ({
                 );
               })}
             </Select>
-
             <Select
               value={selectedPeriod}
               onChange={onSelectPeriod}
@@ -70,9 +58,6 @@ export const ReportFilterHeader: React.FC<ReportFilterHeaderProps> = ({
                 </Select.Option>
               ))}
             </Select>
-          </Space>
-        </Col>
-      </Row>
-    </Card>
+    </>
   );
 };

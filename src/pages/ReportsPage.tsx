@@ -1,12 +1,15 @@
 import React from 'react';
-import { Card, Space, Tabs } from 'antd';
-import { FileDoneOutlined, PlayCircleOutlined, SendOutlined } from '@ant-design/icons';
+import { Card, Space, Tabs, Typography, Button } from 'antd';
+import { FileDoneOutlined, PlayCircleOutlined, SendOutlined, SyncOutlined } from '@ant-design/icons';
 import { ReportFilterHeader } from '@/features/reports/ReportFilterHeader';
 import { ReportVersionsTab } from '@/features/reports/ReportVersionsTab';
 import { ReportAggregationsTab } from '@/features/reports/ReportAggregationsTab';
 import { ReportDeliveriesTab } from '@/features/reports/ReportDeliveriesTab';
 import { ReportModalsContainer } from '@/features/reports/ReportModalsContainer';
 import { useReportsManagement } from '@/features/reports/useReportsManagement';
+import { OperationalFilterBar } from '@/components/OperationalFilterBar';
+
+const { Title, Text } = Typography;
 
 export const ReportsPage: React.FC = () => {
   const {
@@ -45,6 +48,8 @@ export const ReportsPage: React.FC = () => {
     setVersionEventsOpen,
     versionEvents,
     versionEventsLoading,
+    reportAdjustmentAudit,
+    reportVersionFormulaSnapshot,
     handleOpenTimeline,
 
     // Reject Modal
@@ -69,6 +74,7 @@ export const ReportsPage: React.FC = () => {
     artifactsLoading,
     handleOpenArtifacts,
     handleGenerateArtifact,
+    handleExportAdjustedArtifact,
 
     // Manual Aggregation Modal
     manualAggModalOpen,
@@ -93,14 +99,24 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div>
-      {/* Header & Filter Card */}
-      <ReportFilterHeader
-        templates={templates}
-        periods={periods}
-        selectedTemplate={selectedTemplate}
-        selectedPeriod={selectedPeriod}
-        onSelectTemplate={setSelectedTemplate}
-        onSelectPeriod={setSelectedPeriod}
+      <Title level={4} style={{ margin: '0 0 4px', color: '#002B66' }}>
+        Quản Lý Báo Cáo TT15 / QĐ573 (Maker - Checker Workflow)
+      </Title>
+      <Text type="secondary" style={{ display: 'block', fontSize: 13, marginBottom: 16 }}>
+        Quy trình khép kín: Tổng hợp dữ liệu, kiểm tra Rules, phê duyệt Maker-Checker, đóng gói ZIP và truyền nhận CIC.
+      </Text>
+      <OperationalFilterBar
+        filters={(
+          <ReportFilterHeader
+            templates={templates}
+            periods={periods}
+            selectedTemplate={selectedTemplate}
+            selectedPeriod={selectedPeriod}
+            onSelectTemplate={setSelectedTemplate}
+            onSelectPeriod={setSelectedPeriod}
+          />
+        )}
+        actions={<Button icon={<SyncOutlined />} onClick={loadReportData}>Làm mới</Button>}
       />
 
       {/* Main Tabs Container */}
@@ -198,6 +214,8 @@ export const ReportsPage: React.FC = () => {
         versionEventsOpen={versionEventsOpen}
         versionEvents={versionEvents}
         versionEventsLoading={versionEventsLoading}
+        reportAdjustmentAudit={reportAdjustmentAudit}
+        reportVersionFormulaSnapshot={reportVersionFormulaSnapshot}
         onCloseTimeline={() => setVersionEventsOpen(false)}
 
         rejectVersionModalOpen={rejectVersionModalOpen}
@@ -212,6 +230,7 @@ export const ReportsPage: React.FC = () => {
         generatingArtifact={generatingArtifact}
         onCancelArtifact={() => setArtifactModalOpen(false)}
         onGenerateArtifact={handleGenerateArtifact}
+        onExportAdjustedArtifact={handleExportAdjustedArtifact}
 
         manualAggModalOpen={manualAggModalOpen}
         approvedBatches={approvedBatches}

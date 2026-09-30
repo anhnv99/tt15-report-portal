@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, Form, Select, Typography, Alert } from 'antd';
+import { Modal, Form, Select, Typography, Space } from 'antd';
 import type { DataPeriodType } from '@/types';
+import { ContextualHelp } from '@/components/ContextualHelp';
 
 const { Text } = Typography;
 
@@ -32,7 +33,7 @@ export const GeneratePeriodsModal: React.FC<GeneratePeriodsModalProps> = ({
 
   return (
     <Modal
-      title="Khởi Tạo Tự Động Toàn Bộ Kỳ Dữ Liệu Theo Năm"
+      title={<Space><span>Khởi Tạo Tự Động Toàn Bộ Kỳ Dữ Liệu Theo Năm</span><ContextualHelp inline content="Dựa trên cấu hình ngày chốt báo cáo và loại ngày (ngày làm việc/ngày lịch) để sinh đủ 12 tháng hoặc các kỳ bán nguyệt/3 ngày trong năm." /></Space>}
       open={open}
       onCancel={onCancel}
       onOk={handleOk}
@@ -40,13 +41,6 @@ export const GeneratePeriodsModal: React.FC<GeneratePeriodsModalProps> = ({
       okText="Khởi Tạo Tự Động"
       cancelText="Hủy"
     >
-      <Alert
-        message="Hệ thống tự động sinh các kỳ:"
-        description="Dựa trên cấu hình ngày chốt báo cáo và loại ngày (ngày làm việc/ngày lịch) để sinh đủ 12 tháng hoặc các kỳ bán nguyệt/3 ngày trong năm."
-        type="info"
-        showIcon
-        style={{ margin: '12px 0 16px' }}
-      />
       <Form form={form} layout="vertical">
         <Form.Item
           name="year"

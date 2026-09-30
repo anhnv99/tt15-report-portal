@@ -52,6 +52,7 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
   const [selectedSyncReport, setSelectedSyncReport] = useState<string>('D10');
   const [syncing, setSyncing] = useState<boolean>(false);
   const [syncingAndApproving, setSyncingAndApproving] = useState<boolean>(false);
+  const [seedingG04964, setSeedingG04964] = useState<boolean>(false);
 
   // Preview Drawer
   const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false);
@@ -133,6 +134,24 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
       message.error(err?.response?.data?.message || 'Không thể đồng bộ và phê duyệt lô');
     } finally {
       setSyncingAndApproving(false);
+    }
+  };
+
+  const handleSeedG04964 = async () => {
+    const kdlId = selectedSyncPeriod || (periods && periods.length > 0 ? periods[0].id : undefined);
+    if (!kdlId) {
+      message.warning('Vui lòng chọn kỳ dữ liệu để seed tempo G04964');
+      return;
+    }
+    try {
+      setSeedingG04964(true);
+      const result = await biIntegrationApi.seedG04964(kdlId);
+      message.success(`Đã seed ${result.rowCount.toLocaleString()} ô tempo G04964 trên ${result.sheetCount} sheet. Có thể đồng bộ và duyệt lô ngay.`);
+      await loadTempoTables();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || 'Không thể seed tempo G04964');
+    } finally {
+      setSeedingG04964(false);
     }
   };
 
@@ -307,8 +326,14 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
                 options={[
                   { label: 'Mẫu D10', value: 'D10' },
                   { label: 'Mẫu D31', value: 'D31' },
+                  { label: 'Mẫu G04964 (SBV)', value: 'G04964' },
                 ]}
               />
+              {selectedSyncReport === 'G04964' && (
+                <Button loading={seedingG04964} onClick={handleSeedG04964}>
+                  Seed Tempo G04964
+                </Button>
+              )}
               <Button
                 type="primary"
                 icon={<CheckCircleOutlined />}
@@ -344,6 +369,7 @@ export const TempoStagingTab: React.FC<TempoStagingTabProps> = ({ periods, onBat
                 { label: 'Báo Cáo D10', value: 'D10' },
                 { label: 'Báo Cáo D31', value: 'D31' },
                 { label: 'Báo Cáo D40', value: 'D40' },
+                { label: 'Báo Cáo G04964 (SBV)', value: 'G04964' },
               ]}
             />
             <Input

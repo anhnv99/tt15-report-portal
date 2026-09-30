@@ -1,7 +1,8 @@
 import React from 'react';
-import { Modal, Table, Tag, Typography, Alert } from 'antd';
+import { Modal, Table, Tag, Typography, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { ImportBatch } from '@/types';
+import { ContextualHelp } from '@/components/ContextualHelp';
 
 const { Text } = Typography;
 
@@ -60,7 +61,7 @@ export const ManualAggregationModal: React.FC<ManualAggregationModalProps> = ({
 
   return (
     <Modal
-      title="Tổng Hợp Thủ Công (Chọn Các Lô Đã Duyệt)"
+      title={<Space><span>Tổng Hợp Thủ Công (Chọn Các Lô Đã Duyệt)</span><ContextualHelp inline content="Chỉ những lô dữ liệu đã được Checker phê duyệt (APPROVED) trong kỳ mới hiển thị tại đây để tổng hợp." /></Space>}
       open={open}
       onCancel={onCancel}
       onOk={onSubmit}
@@ -69,13 +70,6 @@ export const ManualAggregationModal: React.FC<ManualAggregationModalProps> = ({
       cancelText="Hủy"
       width={750}
     >
-      <Alert
-        message="Chọn các lô nguồn dữ liệu:"
-        description="Chỉ những lô dữ liệu đã được Checker phê duyệt (APPROVED) trong kỳ mới hiển thị tại đây để tổng hợp."
-        type="info"
-        showIcon
-        style={{ margin: '12px 0 16px' }}
-      />
       <Table
         columns={columns}
         dataSource={batches}

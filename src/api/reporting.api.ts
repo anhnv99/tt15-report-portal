@@ -12,7 +12,7 @@ import type {
 
 export const reportingApi = {
   // Aggregations
-  getAggregations: (params?: { reportCode?: string; dataPeriodCode?: string }) =>
+  getAggregations: (params?: { reportCode?: string; dataPeriodId?: number }) =>
     apiClient.get<any, ReportAggregation[]>('/report-aggregations', { params }),
 
   getAggregationById: (id: string) =>
@@ -64,7 +64,7 @@ export const reportingApi = {
   }) => apiClient.post<any, number>('/report-checks/evaluate', data),
 
   // CIC Report Versions
-  getCicReportVersions: (params?: { reportCode?: string; dataPeriodCode?: string }) =>
+  getCicReportVersions: (params?: { reportCode?: string; dataPeriodId?: number }) =>
     apiClient.get<any, CicReportVersion[]>('/cic-report-versions', { params }),
 
   getCicReportVersionById: (id: string) =>
@@ -99,6 +99,69 @@ export const reportingApi = {
         'Content-Type': 'multipart/form-data',
       },
     }),
+
+  previewReportCalculation: (data: {
+    values: Record<string, Record<string, number>>;
+    formulas: Array<{ lineCode: string; columnCode: string; expression: string }>;
+  }) => apiClient.post<any, Record<string, Record<string, number>>>('/report-calculations/preview', data),
+
+  getReportCalculationFormulas: (reportCode: string, sheetCode: string) =>
+    apiClient.get<any, Array<{ lineCode: string; columnCode: string; expression: string }>>(
+      '/report-calculations/formulas', { params: { reportCode, sheetCode } }
+    ),
+
+  saveReportCalculationFormula: (data: { reportCode: string; sheetCode: string; lineCode: string; columnCode: string; expression: string }) =>
+    apiClient.put<any, { lineCode: string; columnCode: string; expression: string }>('/report-calculations/formulas', data),
+
+  previewFormulaSuggestions: (data: {
+    mappings: Array<{ lineCode: string; columnCode: string; workbookSheet: string; excelRow: number; excelColumn: number }>;
+    formulaSuggestions: Array<{ lineCode: string; columnCode: string; sheetCode: string; excelFormula: string }>;
+  }) => apiClient.post<any, Array<{
+    lineCode: string; columnCode: string; excelFormula: string; expression: string | null;
+    status: 'TRANSLATABLE' | 'REVIEW_REQUIRED'; reason: string | null;
+  }>>('/report-calculations/formula-suggestions/preview', data),
+
+  saveReportCalculationFormulas: (formulas: Array<{ reportCode: string; sheetCode: string; lineCode: string; columnCode: string; expression: string }>) =>
+    apiClient.put<any, Array<{ lineCode: string; columnCode: string; expression: string }>>('/report-calculations/formulas/batch', { formulas }),
+
+  getReportCellMappings: (reportCode: string, sheetCode?: string) =>
+    apiClient.get<any, Array<{ reportCode: string; sheetCode: string; lineCode: string; columnCode: string; workbookSheet: string; excelRow: number; excelColumn: number }>>(
+      '/report-cell-mappings', { params: { reportCode, ...(sheetCode ? { sheetCode } : {}) } }
+    ),
+
+  saveReportCellMapping: (data: { reportCode: string; sheetCode: string; lineCode: string; columnCode: string; workbookSheet: string; excelRow: number; excelColumn: number }) =>
+    apiClient.put<any, any>('/report-cell-mappings', data),
+
+  saveReportCellMappings: (mappings: Array<{ reportCode: string; sheetCode: string; lineCode: string; columnCode: string; workbookSheet: string; excelRow: number; excelColumn: number }>) =>
+    apiClient.put<any, any[]>('/report-cell-mappings/batch', { mappings }),
+
+  saveReportAdjustment: (data: {
+    sourceVersionId: string; sheetCode: string; reason: string; adjustedBy: string;
+    values: Record<string, Record<string, number>>;
+  }) => apiClient.post<any, { versionId: string; versionNumber: number }>('/report-adjustments', data),
+
+  getReportAdjustmentAudit: (versionId: string) =>
+    apiClient.get<any, import('@/types').ReportAdjustmentAudit[]>(`/report-adjustments/${versionId}/audit`),
+
+  getReportVersionFormulaSnapshot: (versionId: string) =>
+    apiClient.get<any, import('@/types').ReportVersionFormula[]>(`/report-adjustments/${versionId}/formulas`),
+
+  getReportVersionCells: (versionId: string, sheetCode: string) =>
+    apiClient.get<any, Record<string, Record<string, number>>>(`/report-version-cells/${versionId}`, { params: { sheetCode } }),
+
+  importReportVersionCells: (versionId: string, data: {
+    sheetCode: string; values: Record<string, Record<string, number>>;
+  }) => apiClient.put<any, void>(`/report-version-cells/${versionId}`, data),
+
+  exportAdjustedSbvReport: (versionId: string) =>
+    apiClient.post<any, { fileName: string; sha256: string; size: number }>(`/report-adjustments/${versionId}/export`),
+
+  getAdjustedSbvExportReadiness: (versionId: string) =>
+    apiClient.get<any, {
+      ready: boolean; mappingCount: number; snapshotCellCount: number;
+      missingMappedValues: Array<{ sheetCode: string; lineCode: string; columnCode: string }>;
+      unmappedSnapshotCells: Array<{ sheetCode: string; lineCode: string; columnCode: string }>;
+    }>(`/report-adjustments/${versionId}/export-readiness`),
 
   toggleVersionActive: (versionId: string) =>
     apiClient.patch<any, CicReportVersion>(`/cic-report-versions/${versionId}/toggle-active`),
@@ -152,4 +215,3 @@ export const reportingApi = {
       '/report-delivery-configs/profile'
     ),
 };
-

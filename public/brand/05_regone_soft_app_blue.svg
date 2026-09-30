@@ -33,7 +33,8 @@
     </filter>
   </defs>
 
-  <g transform="translate(0, 10)">
+  <rect width="1024" height="1024" rx="230" fill="url(#appDarkSoftGrad)"/>
+  <g transform="translate(170, 170) scale(0.68)">
     
   <path d="M 240,70
 C 480,50 680,60 760,110

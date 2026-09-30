@@ -88,13 +88,17 @@ export const CatalogPage: React.FC = () => {
     try {
       setSubmitting(true);
       const [startDate, endDate] = values.dateRange;
+      const periodType = periodTypes.find((item) => item.code === values.periodType);
+      if (!periodType) {
+        message.error('Không xác định được loại kỳ dữ liệu');
+        return;
+      }
       const payload = {
         code: values.code,
         name: values.name,
-        periodType: values.periodType,
+        loaiKyDuLieuId: periodType.id,
         startDate: startDate.format('YYYY-MM-DD'),
         endDate: endDate.format('YYYY-MM-DD'),
-        reportingDeadline: values.reportingDeadline ? values.reportingDeadline.format('YYYY-MM-DD') : undefined,
       };
 
       await catalogApi.createDataPeriod(payload);

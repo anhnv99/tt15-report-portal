@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Row, Col, Typography, Space, Segmented, Button, message } from 'antd';
-import { TableOutlined, CodeOutlined, SyncOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { Typography, Button, message, Input, Select } from 'antd';
+import { SyncOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { catalogApi } from '@/api/catalog.api';
 import type { ReportTemplate, ReportTemplateField, ReportTemplateRule } from '@/types';
 import { TemplateListView } from '@/features/templates/TemplateListView';
-import { TemplateJsonPreview } from '@/features/templates/TemplateJsonPreview';
 import { TemplateDetailDrawer } from '@/features/templates/TemplateDetailDrawer';
 import { TemplateRuleModal } from '@/features/templates/TemplateRuleModal';
 import { CreateTemplateModal } from '@/features/templates/CreateTemplateModal';
+import { matchesTemplateDestination } from '@/features/templates/templateDestination';
+import { OperationalFilterBar } from '@/components/OperationalFilterBar';
+import { REPORT_DESTINATION_PROFILES } from '@/features/reporting-destinations/profiles';
 
 const { Title, Text } = Typography;
 
@@ -15,14 +17,9 @@ export const TemplatesPage: React.FC = () => {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterDest, setFilterDest] = useState<string>('ALL');
-
-  // View Mode: 'list' vs 'json-preview'
-  const [viewMode, setViewMode] = useState<string>('list');
-
-  // Preview Mode State
-  const [previewTemplateCode, setPreviewTemplateCode] = useState<string>('D10');
-  const [previewFields, setPreviewFields] = useState<ReportTemplateField[]>([]);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [filterText, setFilterText] = useState('');
+  const [filterFrequency, setFilterFrequency] = useState<string | undefined>();
+  const [filterStatus, setFilterStatus] = useState<string | undefined>();
 
   // Create Template Modal State
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -48,31 +45,10 @@ export const TemplatesPage: React.FC = () => {
       setLoading(true);
       const data = await catalogApi.getReportTemplates();
       setTemplates(data || []);
-      if (data?.length && !previewTemplateCode) {
-        setPreviewTemplateCode(data[0].reportCode);
-      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (previewTemplateCode) {
-      loadPreviewFields(previewTemplateCode);
-    }
-  }, [previewTemplateCode]);
-
-  const loadPreviewFields = async (code: string) => {
-    try {
-      setPreviewLoading(true);
-      const data = await catalogApi.getTemplateFields(code);
-      setPreviewFields(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPreviewLoading(false);
     }
   };
 
@@ -117,6 +93,19 @@ export const TemplatesPage: React.FC = () => {
     await catalogApi.deleteTemplateField(selectedTemplate.reportCode, fieldId);
     message.success('Đã xóa trường');
     loadTemplateDetail(selectedTemplate.reportCode);
+  };
+
+  const handleUpdateField = async (fieldId: number, values: any) => {
+    if (!selectedTemplate) return;
+    try {
+      await catalogApi.updateTemplateField(selectedTemplate.reportCode, fieldId, values);
+      message.success('Đã cập nhật dòng mapping thành công');
+      loadTemplateDetail(selectedTemplate.reportCode);
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || err?.message || 'Không thể cập nhật dòng mapping');
+      throw err;
+    }
   };
 
   // Rule Actions
@@ -179,106 +168,66 @@ export const TemplatesPage: React.FC = () => {
   };
 
   const filteredTemplates = useMemo(() => {
-    if (filterDest === 'ALL') return templates;
-    return templates.filter((t) => {
-      const dest = (t.targetDestination || 'CIC').toUpperCase();
-      if (filterDest === 'SBV') return dest === 'SBV' || dest === 'SVB';
-      return dest === filterDest;
+    const normalizedText = filterText.trim().toLowerCase();
+    return templates.filter((template) => {
+      const matchesText = !normalizedText || [template.reportCode, template.reportName, template.templateNumber]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(normalizedText));
+      const isActive = template.isActive !== false && template.active !== false;
+      const matchesStatus = !filterStatus || (filterStatus === 'ACTIVE' ? isActive : !isActive);
+
+      return matchesTemplateDestination(template, filterDest)
+        && matchesText
+        && (!filterFrequency || template.frequency === filterFrequency)
+        && matchesStatus;
     });
-  }, [templates, filterDest]);
+  }, [templates, filterDest, filterText, filterFrequency, filterStatus]);
+
+  const frequencyOptions = useMemo(
+    () => [...new Set(templates.map((template) => template.frequency).filter(Boolean))]
+      .sort()
+      .map((frequency) => ({ value: frequency!, label: frequency })),
+    [templates],
+  );
 
   return (
     <div>
-      {/* Header Bar */}
-      <Card style={{ marginBottom: 16, borderRadius: 8 }}>
-        <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col xs={24} md={10}>
-            <Title level={4} style={{ margin: 0, color: '#002B66' }}>
-              Cấu Hình Biểu Mẫu Báo Cáo & Bộ Quy Tắc Đối Soát (Rule Engine)
-            </Title>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              Hỗ trợ phân loại đa cơ quan: CIC (TTTD Quốc gia), SBV (Ngân hàng Nhà nước), PCB (Thông tin tín dụng VN).
-            </Text>
-          </Col>
-          <Col xs={24} md={14} style={{ textAlign: 'right' }}>
-            <Space wrap>
-              {viewMode === 'list' && (
-                <Segmented
-                  value={filterDest}
-                  onChange={(val) => setFilterDest(val as string)}
-                  options={[
-                    { label: `Tất cả (${templates.length})`, value: 'ALL' },
-                    { label: '🔵 CIC', value: 'CIC' },
-                    { label: '🟢 SBV', value: 'SBV' },
-                    { label: '🟣 PCB', value: 'PCB' },
-                  ]}
-                />
-              )}
-              <Segmented
-                value={viewMode}
-                onChange={(val) => setViewMode(val as string)}
-                options={[
-                  {
-                    label: (
-                      <Space>
-                        <TableOutlined />
-                        <span>Danh Sách</span>
-                      </Space>
-                    ),
-                    value: 'list',
-                  },
-                  {
-                    label: (
-                      <Space>
-                        <CodeOutlined />
-                        <span>JSON Phụ Lục</span>
-                      </Space>
-                    ),
-                    value: 'json-preview',
-                  },
-                ]}
-              />
-              <Button
-                type="primary"
-                icon={<PlusCircleOutlined />}
-                style={{ background: '#003B95' }}
-                onClick={() => setCreateModalOpen(true)}
-              >
-                Tạo Mới Biểu Mẫu
-              </Button>
-              <Button icon={<SyncOutlined />} onClick={loadTemplates}>
-                Làm mới
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      <Title level={4} style={{ margin: '0 0 4px', color: '#002B66' }}>
+        Cấu Hình Biểu Mẫu Báo Cáo & Bộ Quy Tắc Đối Soát (Rule Engine)
+      </Title>
+      <Text type="secondary" style={{ display: 'block', fontSize: 13, marginBottom: 16 }}>
+        Hỗ trợ phân loại đa cơ quan: CIC (TTTD Quốc gia), SBV (Ngân hàng Nhà nước), PCB (Thông tin tín dụng VN).
+      </Text>
 
-      {/* Mode 1: Table List */}
-      {viewMode === 'list' && (
-        <TemplateListView
-          templates={filteredTemplates}
-          loading={loading}
-          onOpenDetail={handleOpenDetail}
-          onToggleActive={handleToggleActive}
-          onViewJson={(code) => {
-            setPreviewTemplateCode(code);
-            setViewMode('json-preview');
-          }}
-        />
-      )}
+      <OperationalFilterBar
+        filters={(
+          <>
+            <Input.Search allowClear placeholder="Tìm mã, tên hoặc số biểu mẫu" value={filterText} onChange={(event) => setFilterText(event.target.value)} style={{ width: 260 }} />
+            <Select value={filterDest} onChange={setFilterDest} style={{ width: 160 }} options={[
+              { label: `Tất cả cơ quan (${templates.length})`, value: 'ALL' },
+              ...Object.values(REPORT_DESTINATION_PROFILES).map((profile) => ({ label: profile.label, value: profile.id })),
+            ]} />
+            <Select allowClear placeholder="Chu kỳ báo cáo" value={filterFrequency} onChange={setFilterFrequency} style={{ width: 150 }} options={frequencyOptions} />
+            <Select allowClear placeholder="Trạng thái" value={filterStatus} onChange={setFilterStatus} style={{ width: 130 }} options={[
+              { label: 'Đang dùng', value: 'ACTIVE' },
+              { label: 'Tạm dừng', value: 'INACTIVE' },
+            ]} />
+          </>
+        )}
+        actions={(
+          <>
+            <Button type="primary" icon={<PlusCircleOutlined />} style={{ background: '#003B95' }} onClick={() => setCreateModalOpen(true)}>Tạo Mới Biểu Mẫu</Button>
+            <Button icon={<SyncOutlined />} onClick={loadTemplates}>Làm mới</Button>
+          </>
+        )}
+      />
 
-      {/* Mode 2: JSON Preview */}
-      {viewMode === 'json-preview' && (
-        <TemplateJsonPreview
-          templates={templates}
-          selectedCode={previewTemplateCode}
-          fields={previewFields}
-          loading={previewLoading}
-          onSelectCode={(code) => setPreviewTemplateCode(code)}
-          onOpenDetail={handleOpenDetail}
-        />
-      )}
+      <TemplateListView
+        templates={filteredTemplates}
+        loading={loading}
+        onOpenDetail={handleOpenDetail}
+        onToggleActive={handleToggleActive}
+      />
 
       {/* Detail Drawer */}
       <TemplateDetailDrawer
@@ -298,6 +247,7 @@ export const TemplatesPage: React.FC = () => {
         }}
         onDeleteRule={handleDeleteRule}
         onAddField={handleAddField}
+        onUpdateField={handleUpdateField}
         onDeleteField={handleDeleteField}
       />
 

@@ -19,10 +19,9 @@ export const catalogApi = {
   createDataPeriod: (data: {
     code: string;
     name: string;
-    periodType: string;
+    loaiKyDuLieuId: number;
     startDate: string;
     endDate: string;
-    reportingDeadline?: string;
   }) => apiClient.post<any, DataPeriod>('/catalog/data-periods', data),
 
   closeDataPeriod: (code: string) =>
@@ -81,6 +80,9 @@ export const catalogApi = {
 
   addTemplateField: (reportCode: string, field: Partial<ReportTemplateField>) =>
     apiClient.post<any, ReportTemplateField>(`/report-templates/${reportCode}/fields`, field),
+
+  updateTemplateField: (reportCode: string, fieldId: number, field: Partial<ReportTemplateField>) =>
+    apiClient.put<any, ReportTemplateField>(`/report-templates/${reportCode}/fields/${fieldId}`, field),
 
   deleteTemplateField: (reportCode: string, fieldId: number) =>
     apiClient.delete(`/report-templates/${reportCode}/fields/${fieldId}`),

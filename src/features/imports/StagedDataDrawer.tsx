@@ -36,6 +36,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { ImportBatch, StagingRow, ImportApprovalEvent, DataPeriod, ReportTemplate } from '@/types';
 import { importApi } from '@/api/import.api';
+import { ContextualHelp } from '@/components/ContextualHelp';
 
 const { Text } = Typography;
 
@@ -405,6 +406,15 @@ export const StagedDataDrawer: React.FC<StagedDataDrawerProps> = ({
             Chi Tiết Lô Dữ Liệu: <Text strong style={{ color: '#003B95' }}>{batch?.batchCode || (batch?.id ? `BATCH-${batch.id.substring(0, 8).toUpperCase()}` : 'N/A')}</Text>
           </span>
           {batch && getStatusTag(batch.status)}
+          {isEtlChannel && (
+            <ContextualHelp
+              inline
+              label="Hướng dẫn dữ liệu ETL"
+              content={
+                <>Lô dữ liệu này được nạp tự động qua BI ETL Pipeline vào các bảng staging <b>tempo_{batch?.importType?.toLowerCase()}_*</b> theo kỳ dữ liệu.</>
+              }
+            />
+          )}
         </Space>
       }
       placement="right"
@@ -577,23 +587,6 @@ export const StagedDataDrawer: React.FC<StagedDataDrawerProps> = ({
                   {/* Case 2: BI ETL Pipeline Staging Data (Tempo Tables SSoT) */}
                   {rows.length === 0 && tempoTables.length > 0 && (
                     <div>
-                      <Alert
-                        type="info"
-                        showIcon
-                        icon={<DatabaseOutlined style={{ color: '#722ED1' }} />}
-                        message={
-                          <Text strong style={{ color: '#1E293B' }}>
-                            Dữ Liệu Bảng Staging BI (PostgreSQL)
-                          </Text>
-                        }
-                        description={
-                          <Text style={{ fontSize: 12, color: '#475569' }}>
-                            Lô dữ liệu này được nạp tự động qua kênh <b>BI ETL Pipeline</b> trực tiếp vào các bảng chuyên biệt <b>tempo_{batch?.importType?.toLowerCase()}_*</b> theo kỳ dữ liệu. Dưới đây là dữ liệu xem trước trực tiếp từ database PostgreSQL:
-                          </Text>
-                        }
-                        style={{ marginBottom: 16, borderRadius: 8, background: '#F5F3FF', borderColor: '#DDD6FE' }}
-                      />
-
                       {/* Tempo Table Selector & Controls */}
                       <Row justify="space-between" align="middle" gutter={[12, 12]} style={{ marginBottom: 14 }}>
                         <Col xs={24} md={14}>

@@ -200,10 +200,8 @@ export const MainLayout: React.FC = () => {
             height: 64,
           }}
         >
-          <div>
-            <Text strong style={{ fontSize: 16, color: '#0B2A6B' }}>
-              RegOne — Nền Tảng Báo Cáo Tuân Thủ & CIC
-            </Text>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <RegOneBrand size="small" variant="light" onClick={() => navigate('/dashboard')} />
             <Tag color="processing" style={{ marginLeft: 12, borderRadius: 10 }}>
               <CheckCircleOutlined /> Spring Boot 3 + PostgreSQL
             </Tag>
@@ -241,7 +239,7 @@ export const MainLayout: React.FC = () => {
             </Tooltip>
 
             <Tag color="#003B95" style={{ padding: '2px 10px', borderRadius: 4, fontWeight: 600 }}>
-              KT CORP UAT
+              GO UAT
             </Tag>
 
             <Dropdown
@@ -277,14 +275,14 @@ export const MainLayout: React.FC = () => {
                   }}
                   size="default"
                 >
-                  KT
+                  GO
                 </Avatar>
                 <div style={{ lineHeight: 1.2 }}>
                   <Text strong style={{ fontSize: 13, display: 'block' }}>
                     Chuyên viên Báo cáo
                   </Text>
                   <Text type="secondary" style={{ fontSize: 11 }}>
-                    KT Technology
+                    GO
                   </Text>
                 </div>
               </Space>

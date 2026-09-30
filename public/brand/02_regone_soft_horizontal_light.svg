@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3800 1024" width="3800" height="1024">
   
   <defs>
     <linearGradient id="softFrameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
@@ -33,7 +33,7 @@
     </filter>
   </defs>
 
-  <g transform="translate(0, 10)">
+  <g transform="translate(60, 10)">
     
   <path d="M 240,70
 C 480,50 680,60 760,110
@@ -68,5 +68,13 @@ L 290,720
 C 275,700 275,690 280,680
 Z" fill="url(#softCheckGrad)" />
 
+  </g>
+  <g transform="translate(1220, 580)">
+    <text font-family="'Plus Jakarta Sans', 'Inter', 'Montserrat', -apple-system, sans-serif" font-size="440" font-weight="800" letter-spacing="-6px">
+      <tspan fill="url(#textRegGrad)">Reg</tspan><tspan fill="url(#textOneGradSoft)">One</tspan>
+    </text>
+    <text y="170" x="15" font-family="'Plus Jakarta Sans', 'Inter', 'Montserrat', -apple-system, sans-serif" font-size="94" font-weight="500" fill="#475569" letter-spacing="1px">
+      One platform for regulatory reporting
+    </text>
   </g>
 </svg>

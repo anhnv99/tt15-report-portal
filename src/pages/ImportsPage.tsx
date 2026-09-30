@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
-  Row,
-  Col,
   Typography,
   Space,
   Button,
@@ -33,12 +31,13 @@ import { StagedDataDrawer } from "@/features/imports/StagedDataDrawer";
 import { ImportTimelineDrawer } from "@/features/imports/ImportTimelineDrawer";
 import { ImportRejectModal } from "@/features/imports/ImportRejectModal";
 import { SupplementBatchModal } from "@/features/imports/SupplementBatchModal";
+import { OperationalFilterBar } from "@/components/OperationalFilterBar";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
 
 export const ImportsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("tempo");
+  const [activeTab, setActiveTab] = useState<string>("batches");
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [periods, setPeriods] = useState<DataPeriod[]>([]);
@@ -88,9 +87,10 @@ export const ImportsPage: React.FC = () => {
         catalogApi.getReportTemplates(),
         catalogApi.getDataPeriods(),
       ]);
-      setTemplates(tplData || []);
+      const activeTemplates = (tplData || []).filter((template) => template.isActive);
+      setTemplates(activeTemplates);
       setPeriods(prdData || []);
-      if (tplData?.length) setUploadType(tplData[0].reportCode);
+      if (activeTemplates.length) setUploadType(activeTemplates[0].reportCode);
       if (prdData?.length) setUploadPeriodId(prdData[0].id);
     } catch (err) {
       console.error(err);
@@ -241,35 +241,37 @@ export const ImportsPage: React.FC = () => {
 
   return (
     <div>
-      {/* Header Bar */}
-      <Card style={{ marginBottom: 16, borderRadius: 8 }}>
-        <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col xs={24} md={14}>
-            <Title level={4} style={{ margin: 0, color: "#002B66" }}>
-              Quản Trị Dữ Liệu Nạp (BI Staging & Maker/Checker)
-            </Title>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              Giám sát dữ liệu 17 bảng staging PostgreSQL từ BI ETL tự động hoặc
-              tiếp nhận file Excel Maker/Checker.
-            </Text>
-          </Col>
-          <Col xs={24} md={10} style={{ textAlign: "right" }}>
-            <Space wrap>
-              <Button
-                type="primary"
-                icon={<CloudUploadOutlined />}
-                style={{ background: "#003B95" }}
-                onClick={() => setUploadModalOpen(true)}
-              >
-                Tải Lên File Excel
-              </Button>
-              <Button icon={<SyncOutlined />} onClick={loadBatches}>
-                Làm mới
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      <Title level={4} style={{ margin: "0 0 4px", color: "#002B66" }}>
+        Quản Trị Dữ Liệu Nạp (BI Staging & Maker/Checker)
+      </Title>
+      <Text type="secondary" style={{ display: "block", fontSize: 13, marginBottom: 16 }}>
+        Giám sát dữ liệu 17 bảng staging PostgreSQL từ BI ETL tự động hoặc tiếp nhận file Excel Maker/Checker.
+      </Text>
+
+      {activeTab === "batches" && (
+        <OperationalFilterBar
+          filters={(
+            <>
+              <Select allowClear placeholder="Lọc theo biểu mẫu" style={{ width: 260 }} value={filterType} onChange={setFilterType} showSearch optionFilterProp="children">
+                {templates.map((t) => <Select.Option key={t.reportCode} value={t.reportCode}>[{t.reportCode}] Mẫu {t.templateNumber} - {t.reportName}</Select.Option>)}
+              </Select>
+              <Select allowClear placeholder="Lọc theo trạng thái" style={{ width: 190 }} value={filterStatus} onChange={setFilterStatus} options={[
+                { label: "RECEIVED (Tiếp nhận)", value: "RECEIVED" }, { label: "STAGED (Đã tiền xử lý)", value: "STAGED" },
+                { label: "PROCESSING (Đang chạy ETL)", value: "PROCESSING" }, { label: "PROCESSED (Chờ duyệt)", value: "PROCESSED" },
+                { label: "APPROVED (Đã duyệt)", value: "APPROVED" }, { label: "FAILED (Lỗi ETL)", value: "FAILED" },
+                { label: "REJECTED (Từ chối)", value: "REJECTED" },
+              ]} />
+              <Search placeholder="Tìm tên file hoặc mã lô" allowClear onSearch={setSearchQuery} style={{ width: 250 }} />
+            </>
+          )}
+          actions={(
+            <>
+              <Button type="primary" icon={<CloudUploadOutlined />} style={{ background: "#003B95" }} onClick={() => setUploadModalOpen(true)}>Tải Lên File Excel</Button>
+              <Button icon={<SyncOutlined />} onClick={loadBatches}>Làm mới</Button>
+            </>
+          )}
+        />
+      )}
 
       {/* Main Tabs: BI Staging SSoT vs File Upload Batches */}
       <Card style={{ borderRadius: 8 }}>
@@ -287,69 +289,6 @@ export const ImportsPage: React.FC = () => {
               ),
               children: (
                 <div>
-                  {/* Filters Bar */}
-                  <Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={8} md={6}>
-                      <Select
-                        allowClear
-                        placeholder="Lọc theo biểu mẫu"
-                        style={{ width: "100%" }}
-                        value={filterType}
-                        onChange={setFilterType}
-                        showSearch
-                        optionFilterProp="children"
-                      >
-                        {templates.map((t) => (
-                          <Select.Option
-                            key={t.reportCode}
-                            value={t.reportCode}
-                          >
-                            [{t.reportCode}] Mẫu {t.templateNumber} -{" "}
-                            {t.reportName}
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </Col>
-                    <Col xs={24} sm={8} md={6}>
-                      <Select
-                        allowClear
-                        placeholder="Lọc theo trạng thái"
-                        style={{ width: "100%" }}
-                        value={filterStatus}
-                        onChange={setFilterStatus}
-                      >
-                        <Select.Option value="RECEIVED">
-                          RECEIVED (Tiếp nhận)
-                        </Select.Option>
-                        <Select.Option value="STAGED">
-                          STAGED (Đã tiền xử lý)
-                        </Select.Option>
-                        <Select.Option value="PROCESSING">
-                          PROCESSING (Đang chạy ETL)
-                        </Select.Option>
-                        <Select.Option value="PROCESSED">
-                          PROCESSED (Chờ duyệt)
-                        </Select.Option>
-                        <Select.Option value="APPROVED">
-                          APPROVED (Đã duyệt)
-                        </Select.Option>
-                        <Select.Option value="FAILED">
-                          FAILED (Lỗi ETL)
-                        </Select.Option>
-                        <Select.Option value="REJECTED">
-                          REJECTED (Từ chối)
-                        </Select.Option>
-                      </Select>
-                    </Col>
-                    <Col xs={24} sm={8} md={8}>
-                      <Search
-                        placeholder="Tìm kiếm theo tên file hoặc mã lô..."
-                        allowClear
-                        onSearch={setSearchQuery}
-                      />
-                    </Col>
-                  </Row>
-
                   {/* Batch Table */}
                   <ImportBatchTable
                     batches={batches}

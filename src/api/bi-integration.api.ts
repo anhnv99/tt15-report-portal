@@ -27,6 +27,9 @@ export const biIntegrationApi = {
     });
   },
 
+  seedG04964: async (kdlId: number): Promise<{ rowCount: number; sheetCount: number }> =>
+    apiClient.post<any, { rowCount: number; sheetCount: number }>('/integrations/bi/seed-g04964', null, { params: { kdlId } }),
+
   notifyReady: async (payload: {
     kdlId: number;
     reportCode: string;

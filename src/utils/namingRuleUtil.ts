@@ -107,14 +107,14 @@ export const updateAgencyRule = (agency: 'CIC' | 'SBV' | 'PCB', update: Partial<
  * Nhận diện cơ quan đích từ mã biểu mẫu
  * Quy tắc:
  * - D... -> CIC (D10, D11, D12...)
- * - B..., BC..., CAR..., TK... -> SBV
+ * - B..., BC..., CAR..., G..., TK... -> SBV
  * - PCB... -> PCB
  */
 export const detectAgencyFromReportCode = (code?: string): 'CIC' | 'SBV' | 'PCB' => {
   if (!code) return 'CIC';
   const c = code.trim().toUpperCase();
   if (c.startsWith('PCB')) return 'PCB';
-  if (c.startsWith('B') || c.startsWith('BC') || c.startsWith('CAR') || c.startsWith('TK') || c.startsWith('SBV')) {
+  if (c.startsWith('B') || c.startsWith('BC') || c.startsWith('CAR') || c.startsWith('G') || c.startsWith('TK') || c.startsWith('SBV')) {
     return 'SBV';
   }
   return 'CIC';

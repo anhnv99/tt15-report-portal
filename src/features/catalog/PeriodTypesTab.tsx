@@ -1,8 +1,9 @@
-import React from 'react';
-import { Table, Tag, Typography, Space, Tooltip } from 'antd';
-import { ClockCircleOutlined, CalendarOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import React, { useMemo, useState } from 'react';
+import { Table, Tag, Typography, Space, Input, Select } from 'antd';
+import { ClockCircleOutlined, CalendarOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { DataPeriodType } from '@/types';
+import { OperationalFilterBar } from '@/components/OperationalFilterBar';
 
 const { Text } = Typography;
 
@@ -67,6 +68,20 @@ const PERIOD_METADATA: Record<
 };
 
 export const PeriodTypesTab: React.FC<PeriodTypesTabProps> = ({ periodTypes, loading }) => {
+  const [searchText, setSearchText] = useState('');
+  const [dayType, setDayType] = useState<string | undefined>();
+  const filteredPeriodTypes = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    return periodTypes.filter((periodType) => {
+      const metadata = PERIOD_METADATA[periodType.code];
+      const matchesKeyword = !keyword || `${periodType.code} ${periodType.name} ${metadata?.frequency || ''}`
+        .toLowerCase()
+        .includes(keyword);
+      const resolvedDayType = periodType.dayType || metadata?.dayType || 'NGAY_LICH';
+      return matchesKeyword && (!dayType || resolvedDayType === dayType);
+    });
+  }, [dayType, periodTypes, searchText]);
+
   const columns: ColumnsType<DataPeriodType> = [
     {
       title: 'Mã Loại Kỳ',
@@ -155,13 +170,27 @@ export const PeriodTypesTab: React.FC<PeriodTypesTabProps> = ({ periodTypes, loa
   ];
 
   return (
-    <Table
+    <>
+      <OperationalFilterBar
+        filters={(
+          <>
+            <Input.Search allowClear placeholder="Tìm mã hoặc tên loại kỳ" value={searchText} onChange={(event) => setSearchText(event.target.value)} style={{ width: 250 }} />
+            <Select allowClear placeholder="Loại ngày" value={dayType} onChange={setDayType} style={{ width: 190 }} options={[
+              { value: 'NGAY_LAM_VIEC', label: 'Ngày làm việc' },
+              { value: 'NGAY_LICH', label: 'Ngày lịch' },
+            ]} />
+            <Text strong style={{ fontSize: 13 }}>Kết quả: {filteredPeriodTypes.length}</Text>
+          </>
+        )}
+      />
+      <Table
       columns={columns}
-      dataSource={periodTypes}
+      dataSource={filteredPeriodTypes}
       rowKey="code"
       loading={loading}
       pagination={false}
       size="middle"
-    />
+      />
+    </>
   );
 };

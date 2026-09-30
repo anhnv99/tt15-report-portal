@@ -3,6 +3,8 @@ import type {
   ValidationResult,
   AggregationSourceBatch,
   CicReportEvent,
+  ReportAdjustmentAudit,
+  ReportVersionFormula,
   CicReportVersion,
   ReportArtifact,
   ImportBatch,
@@ -33,6 +35,8 @@ interface ReportModalsContainerProps {
   versionEventsOpen: boolean;
   versionEvents: CicReportEvent[];
   versionEventsLoading: boolean;
+  reportAdjustmentAudit: ReportAdjustmentAudit[];
+  reportVersionFormulaSnapshot: ReportVersionFormula[];
   onCloseTimeline: () => void;
 
   // Reject Modal
@@ -49,6 +53,7 @@ interface ReportModalsContainerProps {
   generatingArtifact: boolean;
   onCancelArtifact: () => void;
   onGenerateArtifact: () => Promise<void>;
+  onExportAdjustedArtifact: () => Promise<void>;
 
   // Manual Aggregation Modal
   manualAggModalOpen: boolean;
@@ -82,6 +87,8 @@ export const ReportModalsContainer: React.FC<ReportModalsContainerProps> = ({
   versionEventsOpen,
   versionEvents,
   versionEventsLoading,
+  reportAdjustmentAudit,
+  reportVersionFormulaSnapshot,
   onCloseTimeline,
 
   rejectVersionModalOpen,
@@ -96,6 +103,7 @@ export const ReportModalsContainer: React.FC<ReportModalsContainerProps> = ({
   generatingArtifact,
   onCancelArtifact,
   onGenerateArtifact,
+  onExportAdjustedArtifact,
 
   manualAggModalOpen,
   approvedBatches,
@@ -132,6 +140,8 @@ export const ReportModalsContainer: React.FC<ReportModalsContainerProps> = ({
         open={versionEventsOpen}
         events={versionEvents}
         loading={versionEventsLoading}
+        adjustments={reportAdjustmentAudit}
+        formulas={reportVersionFormulaSnapshot}
         onClose={onCloseTimeline}
       />
 
@@ -150,6 +160,7 @@ export const ReportModalsContainer: React.FC<ReportModalsContainerProps> = ({
         generating={generatingArtifact}
         onCancel={onCancelArtifact}
         onGenerate={onGenerateArtifact}
+        onExportAdjusted={onExportAdjustedArtifact}
       />
 
       <ManualAggregationModal

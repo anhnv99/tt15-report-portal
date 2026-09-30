@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { message, Modal } from 'antd';
 import { reportingApi } from '@/api/reporting.api';
 import { catalogApi } from '@/api/catalog.api';
@@ -9,6 +9,8 @@ import type {
   DataPeriod,
   CicReportVersion,
   CicReportEvent,
+  ReportAdjustmentAudit,
+  ReportVersionFormula,
   ReportAggregation,
   AggregationSourceBatch,
   ReportArtifact,
@@ -18,9 +20,13 @@ import type {
 } from '@/types';
 
 export const useReportsManagement = () => {
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const initialUrlTemplate = searchParams?.get('template') || 'D10';
-  const initialUrlPeriod = searchParams?.get('period') || '';
+  const initialUrlParams = useMemo(
+    () => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ''),
+    [],
+  );
+  const initialUrlTemplate = initialUrlParams.get('template') || 'D10';
+  const initialUrlPeriod = initialUrlParams.get('period') || '';
+  const initialUrlPeriodId = initialUrlParams.get('periodId');
 
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [periods, setPeriods] = useState<DataPeriod[]>([]);
@@ -31,6 +37,7 @@ export const useReportsManagement = () => {
   const [aggregations, setAggregations] = useState<ReportAggregation[]>([]);
   const [deliveries, setDeliveries] = useState<ReportDelivery[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasLoadedReportData, setHasLoadedReportData] = useState(false);
 
   // Tabs State
   const [activeTab, setActiveTab] = useState<string>('versions');
@@ -50,6 +57,8 @@ export const useReportsManagement = () => {
   const [versionEventsOpen, setVersionEventsOpen] = useState(false);
   const [versionEvents, setVersionEvents] = useState<CicReportEvent[]>([]);
   const [versionEventsLoading, setVersionEventsLoading] = useState(false);
+  const [reportAdjustmentAudit, setReportAdjustmentAudit] = useState<ReportAdjustmentAudit[]>([]);
+  const [reportVersionFormulaSnapshot, setReportVersionFormulaSnapshot] = useState<ReportVersionFormula[]>([]);
 
   // Version Reject Modal State
   const [rejectVersionModalOpen, setRejectVersionModalOpen] = useState(false);
@@ -79,36 +88,36 @@ export const useReportsManagement = () => {
         catalogApi.getReportTemplates(),
         catalogApi.getDataPeriods(),
       ]);
-      setTemplates(tplData || []);
+      setTemplates((tplData || []).filter((template) => template.isActive));
       setPeriods(prdData || []);
-      const paramPeriodId = searchParams?.get('periodId');
-      if (paramPeriodId && prdData?.length) {
-        const found = prdData.find((p) => String(p.id) === String(paramPeriodId) || p.code === String(paramPeriodId));
+      if (initialUrlPeriodId && prdData?.length) {
+        const found = prdData.find((p) => String(p.id) === initialUrlPeriodId || p.code === initialUrlPeriodId);
         if (found) {
           setSelectedPeriod(found.code);
         }
-      } else if (!selectedPeriod && prdData?.length) {
-        setSelectedPeriod(prdData[0].code);
+      } else if (prdData?.length) {
+        setSelectedPeriod((current) => current || prdData[0].code);
       }
-      if (tplData?.length && !selectedTemplate) {
-        setSelectedTemplate(tplData[0].reportCode);
+      if (tplData?.length) {
+        setSelectedTemplate((current) => current || tplData[0].reportCode);
       }
     } catch (err) {
       console.error(err);
     }
-  }, [selectedTemplate, selectedPeriod, searchParams]);
+  }, [initialUrlPeriodId]);
 
   const loadReportData = useCallback(async () => {
     try {
       setLoading(true);
+      const selectedPeriodId = periods.find((period) => period.code === selectedPeriod)?.id;
       const [verData, aggData, delData] = await Promise.all([
         reportingApi.getCicReportVersions({
           reportCode: selectedTemplate,
-          dataPeriodCode: selectedPeriod || undefined,
+          dataPeriodId: selectedPeriodId,
         }),
         reportingApi.getAggregations({
           reportCode: selectedTemplate,
-          dataPeriodCode: selectedPeriod || undefined,
+          dataPeriodId: selectedPeriodId,
         }),
         reportingApi.getReportDeliveries().catch(() => []),
       ]);
@@ -119,18 +128,19 @@ export const useReportsManagement = () => {
       console.error(err);
     } finally {
       setLoading(false);
+      setHasLoadedReportData(true);
     }
-  }, [selectedTemplate, selectedPeriod]);
+  }, [periods, selectedTemplate, selectedPeriod]);
 
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
 
   useEffect(() => {
-    if (selectedTemplate) {
+    if (selectedTemplate && selectedPeriod && periods.some((period) => period.code === selectedPeriod)) {
       loadReportData();
     }
-  }, [selectedTemplate, selectedPeriod, loadReportData]);
+  }, [periods, selectedTemplate, selectedPeriod, loadReportData]);
 
   // Auto Aggregation
   const handleAutoAggregate = async () => {
@@ -257,9 +267,14 @@ export const useReportsManagement = () => {
   // Create CIC Report Version from Completed Aggregation
   const handleCreateVersionFromAggregation = async (agg: ReportAggregation) => {
     const periodObj = periods.find((p) => p.code === agg.dataPeriodCode || p.id === (agg as any).dataPeriodId) || periods[0];
-    const nextVersion = versions.filter((v) => v.reportCode === agg.reportCode).length + 1;
     try {
       setLoading(true);
+      // Reload before deriving the version number: recovery jobs may have created a draft after this screen loaded.
+      const currentVersions = await reportingApi.getCicReportVersions({
+        reportCode: agg.reportCode,
+        dataPeriodId: periodObj ? periodObj.id : (agg as any).dataPeriodId,
+      });
+      const nextVersion = Math.max(0, ...currentVersions.map((version) => version.versionNumber || 0)) + 1;
       await reportingApi.createCicReportVersion({
         reportCode: agg.reportCode,
         dataPeriodId: periodObj ? periodObj.id : (agg as any).dataPeriodId,
@@ -364,8 +379,14 @@ export const useReportsManagement = () => {
     setVersionEventsOpen(true);
     try {
       setVersionEventsLoading(true);
-      const data = await reportingApi.getVersionEvents(versionId);
-      setVersionEvents(data || []);
+      const [events, adjustments, formulas] = await Promise.all([
+        reportingApi.getVersionEvents(versionId),
+        reportingApi.getReportAdjustmentAudit(versionId),
+        reportingApi.getReportVersionFormulaSnapshot(versionId),
+      ]);
+      setVersionEvents(events || []);
+      setReportAdjustmentAudit(adjustments || []);
+      setReportVersionFormulaSnapshot(formulas || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -418,6 +439,21 @@ export const useReportsManagement = () => {
     }
   };
 
+  const handleExportAdjustedArtifact = async () => {
+    if (!selectedVersion) return;
+    try {
+      setGeneratingArtifact(true);
+      await reportingApi.exportAdjustedSbvReport(selectedVersion.id);
+      message.success('Đã xuất Excel SBV từ snapshot version điều chỉnh');
+      await loadArtifacts(selectedVersion.id);
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || 'Không thể xuất Excel version điều chỉnh');
+    } finally {
+      setGeneratingArtifact(false);
+    }
+  };
+
   // Deliveries
   const handleDispatch = async (deliveryIdOrVersionId: string, destination?: string) => {
     try {
@@ -465,7 +501,7 @@ export const useReportsManagement = () => {
     versions,
     aggregations,
     deliveries,
-    loading,
+    loading: loading || !hasLoadedReportData,
     activeTab,
     setActiveTab,
     loadReportData,
@@ -491,6 +527,8 @@ export const useReportsManagement = () => {
     setVersionEventsOpen,
     versionEvents,
     versionEventsLoading,
+    reportAdjustmentAudit,
+    reportVersionFormulaSnapshot,
     handleOpenTimeline,
 
     // Reject Modal
@@ -515,6 +553,7 @@ export const useReportsManagement = () => {
     artifactsLoading,
     handleOpenArtifacts,
     handleGenerateArtifact,
+    handleExportAdjustedArtifact,
 
     // Manual Aggregation Modal
     manualAggModalOpen,

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Card, Table, Tag, Button, Space, Typography, Switch, Tooltip } from 'antd';
-import { SettingOutlined, CodeOutlined } from '@ant-design/icons';
-import { SlidersHorizontal, Code } from 'lucide-react';
+import { SlidersHorizontal, FileArchive, FileSpreadsheet } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import type { ReportTemplate } from '@/types';
+import { downloadSbvOfficialExcelTemplate } from '@/features/imports/utils/multiSheetTemplateGenerator';
+import { getTemplateDestinationProfile } from '@/features/reporting-destinations/resolveReportDestination';
 
 const { Text } = Typography;
 
@@ -11,7 +12,6 @@ interface TemplateListViewProps {
   templates: ReportTemplate[];
   loading: boolean;
   onOpenDetail: (tpl: ReportTemplate) => void;
-  onViewJson: (reportCode: string) => void;
   onToggleActive: (reportCode: string) => void;
 }
 
@@ -19,7 +19,6 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
   templates,
   loading,
   onOpenDetail,
-  onViewJson,
   onToggleActive,
 }) => {
   const columns: ColumnsType<ReportTemplate> = [
@@ -42,16 +41,16 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
       dataIndex: 'targetDestination',
       key: 'targetDestination',
       width: 130,
-      render: (dest) => {
-        const d = (dest || 'CIC').toUpperCase();
-        const color = d === 'CIC' ? 'blue' : d === 'SBV' || d === 'SVB' ? 'green' : 'purple';
-        return <Tag color={color} style={{ fontWeight: 600 }}>{d}</Tag>;
+      render: (_, template) => {
+        const profile = getTemplateDestinationProfile(template);
+        return <Tag color={profile.tagColor} style={{ fontWeight: 600 }}>{profile.label}</Tag>;
       },
     },
     {
       title: 'Tên Biểu Mẫu Báo Cáo',
       dataIndex: 'reportName',
       key: 'reportName',
+      width: 400,
       render: (n, r) => (
         <div>
           <Text strong>{n}</Text>
@@ -139,23 +138,30 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
               onClick={() => onOpenDetail(r)}
             />
           </Tooltip>
-          {r.targetDestination === 'SBV' ? (
-            <Tooltip title="Báo cáo Excel NHNN (.xlsx)">
+          {getTemplateDestinationProfile(r).supportsExcelMapping ? (
+            <Tooltip title="Tải Mẫu Biểu Excel NHNN (.xlsx)">
               <Button
                 shape="circle"
                 size="small"
-                icon={<Code size={14} />}
-                disabled
-                style={{ opacity: 0.4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                icon={<FileSpreadsheet size={14} />}
+                style={{
+                  background: '#16A34A',
+                  borderColor: '#16A34A',
+                  color: '#FFFFFF',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onClick={() => downloadSbvOfficialExcelTemplate(r.reportCode, r)}
               />
             </Tooltip>
           ) : (
-            <Tooltip title="Xem định dạng JSON Root Structure">
+            <Tooltip title="Xem thông tin tệp và cấu hình biểu mẫu">
               <Button
                 shape="circle"
                 size="small"
-                icon={<Code size={14} />}
-                onClick={() => onViewJson(r.reportCode)}
+                icon={<FileArchive size={14} />}
+                onClick={() => onOpenDetail(r)}
                 style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
               />
             </Tooltip>
@@ -173,7 +179,7 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
         rowKey="reportCode"
         loading={loading}
         pagination={{ pageSize: 15 }}
-        scroll={{ x: 1100 }}
+        scroll={{ x: 1500 }}
       />
     </Card>
   );

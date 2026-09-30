@@ -1,7 +1,7 @@
 import React from 'react';
-import { Drawer, Spin, Timeline, Typography, Tag, Empty, Card } from 'antd';
+import { Drawer, Spin, Timeline, Typography, Tag, Empty, Card, Divider, Table } from 'antd';
 import { HistoryOutlined } from '@ant-design/icons';
-import type { CicReportEvent } from '@/types';
+import type { CicReportEvent, ReportAdjustmentAudit, ReportVersionFormula } from '@/types';
 
 const { Text } = Typography;
 
@@ -9,6 +9,8 @@ interface VersionTimelineDrawerProps {
   open: boolean;
   events: CicReportEvent[];
   loading: boolean;
+  adjustments: ReportAdjustmentAudit[];
+  formulas: ReportVersionFormula[];
   onClose: () => void;
 }
 
@@ -16,6 +18,8 @@ export const VersionTimelineDrawer: React.FC<VersionTimelineDrawerProps> = ({
   open,
   events,
   loading,
+  adjustments,
+  formulas,
   onClose,
 }) => {
   const getActionColor = (action: string) => {
@@ -79,6 +83,27 @@ export const VersionTimelineDrawer: React.FC<VersionTimelineDrawerProps> = ({
               };
             })}
           />
+        )}
+        <Divider>Điều chỉnh số liệu</Divider>
+        {adjustments.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Version này chưa có điều chỉnh ô" /> : (
+          <Table size="small" rowKey={(row) => `${row.sheetCode}-${row.lineCode}-${row.columnCode}-${row.changedAt}`}
+            pagination={{ pageSize: 8 }} scroll={{ x: 760 }} dataSource={adjustments}
+            columns={[
+              { title: 'Sheet / ô', width: 160, render: (_, row) => <Text code>{row.sheetCode}.{row.lineCode}.{row.columnCode}</Text> },
+              { title: 'Trước', dataIndex: 'oldValue', width: 100, render: (value) => value ?? '-' },
+              { title: 'Sau', dataIndex: 'newValue', width: 100 },
+              { title: 'Loại', dataIndex: 'changeType', width: 100, render: (value) => <Tag color={value === 'MANUAL' ? 'orange' : 'blue'}>{value}</Tag> },
+              { title: 'Lý do / người sửa', width: 190, render: (_, row) => <><div>{row.reason}</div><Text type="secondary">{row.changedBy}</Text></> },
+            ]} />
+        )}
+        <Divider>Công thức đã dùng cho version</Divider>
+        {formulas.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Version này không có công thức tổng được lưu" /> : (
+          <Table size="small" rowKey={(row) => `${row.sheetCode}-${row.lineCode}-${row.columnCode}`}
+            pagination={{ pageSize: 8 }} scroll={{ x: 620 }} dataSource={formulas}
+            columns={[
+              { title: 'Sheet / ô tổng', width: 210, render: (_, row) => <Text code>{row.sheetCode}.{row.lineCode}.{row.columnCode}</Text> },
+              { title: 'Biểu thức', dataIndex: 'expression', render: (value) => <Text code>{value}</Text> },
+            ]} />
         )}
       </Spin>
     </Drawer>

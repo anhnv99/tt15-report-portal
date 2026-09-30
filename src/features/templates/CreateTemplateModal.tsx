@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Switch, Row, Col, Alert, Typography, Tag, Space, Button, Tooltip } from 'antd';
+import { Modal, Form, Input, Select, Switch, Row, Col, Typography, Tag, Space, Button } from 'antd';
 import { FileAddOutlined, FileZipOutlined, CheckCircleFilled, SettingOutlined } from '@ant-design/icons';
 import { catalogApi } from '@/api/catalog.api';
 import type { DataPeriodType } from '@/types';
 import {
-  detectAgencyFromReportCode,
   generateFileNamePreview,
   getAgencyRule,
-  type AgencyNamingRule,
 } from '@/utils/namingRuleUtil';
+import { ContextualHelp } from '@/components/ContextualHelp';
+import { REPORT_DESTINATION_PROFILES, getReportDestinationProfile } from '@/features/reporting-destinations/profiles';
+import { normalizeReportDestination, resolveTemplateDestination } from '@/features/reporting-destinations/resolveReportDestination';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -37,27 +38,20 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   useEffect(() => {
     if (open) {
       form.resetFields();
-      setTargetDestination('CIC');
-      setReportCodeVal('D10');
+      const profile = getReportDestinationProfile('CIC');
+      setTargetDestination(profile.id);
+      setReportCodeVal(profile.defaultReportCode);
       setShowCustomNaming(false);
       setCustomPattern('');
 
       form.setFieldsValue({
-        targetDestination: 'CIC',
-        reportCode: 'D10',
-        filePrefix: 'D10',
+        targetDestination: profile.id,
+        reportCode: profile.defaultReportCode,
+        filePrefix: profile.defaultReportCode,
         templateNumber: '01',
         frequency: 'MONTHLY',
-        sourceReference: getAgencyRule('CIC').legalBasis,
-        rootStructure: JSON.stringify(
-          {
-            MA_DON_VI: '79301001',
-            MA_BIEU_MAU: 'D10',
-            DANH_SACH_DU_LIEU: [],
-          },
-          null,
-          2
-        ),
+        sourceReference: getAgencyRule(profile.id).legalBasis,
+        rootStructure: profile.getDefaultRootStructure(profile.defaultReportCode),
         isActive: true,
         requireMakerChecker: true,
       });
@@ -67,10 +61,13 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     }
   }, [open, form]);
 
-  const handleTargetDestinationChange = (dest: string) => {
-    setTargetDestination(dest);
-    const rule = getAgencyRule(dest);
-    form.setFieldValue('sourceReference', rule.legalBasis);
+  const handleTargetDestinationChange = (value: string) => {
+    const destination = normalizeReportDestination(value);
+    const profile = getReportDestinationProfile(destination);
+    setTargetDestination(profile.id);
+    form.setFieldValue('sourceReference', getAgencyRule(profile.id).legalBasis);
+    const reportCode = form.getFieldValue('reportCode') || profile.defaultReportCode;
+    form.setFieldValue('rootStructure', profile.getDefaultRootStructure(reportCode));
   };
 
   const loadPeriodTypes = async () => {
@@ -104,20 +101,13 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     form.setFieldValue('reportCode', code);
     form.setFieldValue('filePrefix', code);
 
-    // Tự động nhận diện cơ quan đích và căn cứ pháp lý theo quy chuẩn đặt tên
-    const detected = detectAgencyFromReportCode(code);
+    const detected = resolveTemplateDestination({ reportCode: code });
+    const profile = getReportDestinationProfile(detected);
     setTargetDestination(detected);
     form.setFieldValue('targetDestination', detected);
     form.setFieldValue('sourceReference', getAgencyRule(detected).legalBasis);
 
-    // Auto update default json
-    try {
-      const currentJson = JSON.parse(form.getFieldValue('rootStructure') || '{}');
-      currentJson.MA_BIEU_MAU = code;
-      form.setFieldValue('rootStructure', JSON.stringify(currentJson, null, 2));
-    } catch {
-      // ignore
-    }
+    form.setFieldValue('rootStructure', profile.getDefaultRootStructure(code || profile.defaultReportCode));
   };
 
   // Tính toán Live Preview tên tệp theo quy chuẩn từ Settings
@@ -130,6 +120,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   });
 
   const currentAgencyRule = getAgencyRule(targetDestination);
+  const currentDestinationProfile = getReportDestinationProfile(normalizeReportDestination(targetDestination));
 
   return (
     <Modal
@@ -137,6 +128,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <FileAddOutlined style={{ color: '#003B95', fontSize: 20 }} />
           <span>Tạo Mới Biểu Mẫu Báo Cáo (CIC / SBV / PCB)</span>
+          <ContextualHelp inline content="Khi nhập mã biểu mẫu, hệ thống tự xác định cơ quan tiếp nhận, căn cứ pháp lý và áp dụng quy tắc đặt tên tệp nén nộp. Chỉ cần xác nhận phần xem trước bên dưới." />
         </div>
       }
       open={open}
@@ -148,14 +140,6 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       width={740}
       destroyOnHidden
     >
-      <Alert
-        message="Hệ Thống Tự Động Hóa Quy Chuẩn Đặt Tên"
-        description="Khi nhập Mã Biểu Mẫu, hệ thống sẽ tự động xác định Cơ Quan Tiếp Nhận, Căn cứ pháp lý và áp dụng Quy tắc đặt tên tệp nén nộp được cấu hình tại Màn Cài Đặt. Người dùng chỉ cần xác nhận Live Preview bên dưới."
-        type="info"
-        showIcon
-        style={{ marginBottom: 16 }}
-      />
-
       <Form form={form} layout="vertical">
         <Row gutter={16}>
           <Col span={12}>
@@ -184,35 +168,10 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             >
               <Select
                 onChange={handleTargetDestinationChange}
-                options={[
-                  {
-                    value: 'CIC',
-                    label: (
-                      <Space>
-                        <Tag color="blue" style={{ fontWeight: 600 }}>CIC</Tag>
-                        <span>Trung tâm Tín dụng Quốc gia</span>
-                      </Space>
-                    ),
-                  },
-                  {
-                    value: 'SBV',
-                    label: (
-                      <Space>
-                        <Tag color="green" style={{ fontWeight: 600 }}>SBV</Tag>
-                        <span>Ngân hàng Nhà nước Việt Nam</span>
-                      </Space>
-                    ),
-                  },
-                  {
-                    value: 'PCB',
-                    label: (
-                      <Space>
-                        <Tag color="purple" style={{ fontWeight: 600 }}>PCB</Tag>
-                        <span>Thông tin Tín dụng Việt Nam</span>
-                      </Space>
-                    ),
-                  },
-                ]}
+                options={Object.values(REPORT_DESTINATION_PROFILES).map((profile) => ({
+                  value: profile.id,
+                  label: <Space><Tag color={profile.tagColor} style={{ fontWeight: 600 }}>{profile.label}</Tag><span>{profile.deliveryLabel}</span></Space>,
+                }))}
               />
             </Form.Item>
           </Col>
@@ -235,8 +194,8 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 Tên Tệp Nén Nộp Tự Động Sinh (Live Preview Chuẩn {targetDestination}):
               </Text>
             </Space>
-            <Tag color={targetDestination === 'CIC' ? 'blue' : targetDestination === 'SBV' ? 'green' : 'purple'} style={{ fontWeight: 700 }}>
-              Cơ quan: {targetDestination}
+            <Tag color={currentDestinationProfile.tagColor} style={{ fontWeight: 700 }}>
+              Cơ quan: {currentDestinationProfile.label}
             </Tag>
           </div>
 
@@ -397,7 +356,11 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
 
         <Form.Item
           name="rootStructure"
-          label="Cấu Trúc JSON Phụ Lục II (Root Structure Schema)"
+          label={
+            currentDestinationProfile.supportsExcelMapping
+              ? 'Cấu Trúc Sheet Báo Cáo Excel (Sheets Configuration JSON)'
+              : 'Cấu Trúc JSON Phụ Lục II (Root Structure Schema)'
+          }
           rules={[
             { required: true, message: 'Vui lòng nhập cấu trúc JSON mẫu' },
             {
@@ -412,7 +375,11 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               },
             },
           ]}
-          extra="Cấu trúc khung JSON tiêu chuẩn truyền nhận báo cáo sang cơ quan đích"
+          extra={
+            currentDestinationProfile.supportsExcelMapping
+              ? 'Khai báo danh sách sheet, tiền tố phân loại cột (prefix) trong template Excel báo cáo NHNN'
+              : 'Cấu trúc khung JSON tiêu chuẩn truyền nhận báo cáo sang cơ quan đích'
+          }
         >
           <TextArea rows={5} style={{ fontFamily: 'monospace', fontSize: 12 }} />
         </Form.Item>
