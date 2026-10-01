@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { ConfigProvider, App as AntdApp } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { ReportsPage } from '@/pages/ReportsPage';
-import { ImportsPage } from '@/pages/ImportsPage';
-import { CatalogPage } from '@/pages/CatalogPage';
-import { TemplatesPage } from '@/pages/TemplatesPage';
-import { WorkflowsPage } from '@/pages/WorkflowsPage';
-import { SettingsPage } from '@/pages/SettingsPage';
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
+const ImportsPage = lazy(() => import('@/pages/ImportsPage').then(m => ({ default: m.ImportsPage })));
+const CatalogPage = lazy(() => import('@/pages/CatalogPage').then(m => ({ default: m.CatalogPage })));
+const TemplatesPage = lazy(() => import('@/pages/TemplatesPage').then(m => ({ default: m.TemplatesPage })));
+const WorkflowsPage = lazy(() => import('@/pages/WorkflowsPage').then(m => ({ default: m.WorkflowsPage })));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
 export const App: React.FC = () => {
   return (

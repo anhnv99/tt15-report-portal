@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
+import { Spin } from 'antd';
 import type {
   ValidationResult,
   AggregationSourceBatch,
@@ -15,7 +16,7 @@ import { VersionTimelineDrawer } from '@/features/reports/VersionTimelineDrawer'
 import { RejectVersionModal } from '@/features/reports/RejectVersionModal';
 import { ArtifactModal } from '@/features/reports/ArtifactModal';
 import { ManualAggregationModal } from '@/features/reports/ManualAggregationModal';
-import { ReportAdjustmentModal } from '@/features/reports/ReportAdjustmentModal';
+const ReportAdjustmentModal = lazy(() => import('@/features/reports/ReportAdjustmentModal').then(m => ({ default: m.ReportAdjustmentModal })));
 
 interface ReportModalsContainerProps {
   // Validation Drawer
@@ -174,12 +175,16 @@ export const ReportModalsContainer: React.FC<ReportModalsContainerProps> = ({
         onSubmit={onSubmitManualAgg}
       />
 
-      <ReportAdjustmentModal
-        open={adjustModalOpen}
-        version={adjustVersion}
-        onClose={onCloseAdjust}
-        onSuccess={onAdjustSuccess}
-      />
+      {adjustModalOpen && (
+        <Suspense fallback={<div role="status" aria-label="Đang tải điều chỉnh báo cáo"><Spin /></div>}>
+          <ReportAdjustmentModal
+            open={adjustModalOpen}
+            version={adjustVersion}
+            onClose={onCloseAdjust}
+            onSuccess={onAdjustSuccess}
+          />
+        </Suspense>
+      )}
     </>
   );
 };

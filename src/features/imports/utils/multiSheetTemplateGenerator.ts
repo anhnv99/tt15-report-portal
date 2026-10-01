@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { message } from 'antd';
 import type { ReportTemplate, ReportTemplateField } from '@/types';
 import { catalogApi } from '@/api/catalog.api';
@@ -440,6 +439,7 @@ export const downloadMultiSheetExcelTemplate = async (
 
     const config = resolveReportSheetConfig(reportCode, template, fields);
 
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
 
     config.sheets.forEach((sheet) => {
@@ -468,6 +468,7 @@ export const inspectUploadedExcelFile = async (
   file: File
 ): Promise<{ sheetNames: string[]; rowCount: number; fileName: string; fileSizeKb: number }> => {
   const data = await file.arrayBuffer();
+  const XLSX = await import('xlsx');
   const wb = XLSX.read(data, { type: 'array' });
   const sheetNames = wb.SheetNames || [];
   let totalRows = 0;
@@ -518,6 +519,7 @@ export const downloadSbvOfficialExcelTemplate = async (
       (template?.reportName || '').toLowerCase().includes('giám sát') ||
       (template?.reportName || '').toLowerCase().includes('qlgs');
 
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
     const safeSheetName = `${reportCode.replace(/[^a-zA-Z0-9_-]/g, '_')}_SBV`.slice(0, 31);
 

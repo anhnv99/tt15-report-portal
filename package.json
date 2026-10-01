@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc -b",
+    "smoke:lazy": "node scripts/smoke-lazy-loading.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

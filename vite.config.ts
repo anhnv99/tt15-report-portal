@@ -6,6 +6,15 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: process.env.VERCEL ? '/' : (process.env.GITHUB_ACTIONS ? '/tt15-report-portal/' : '/'),
   plugins: [react()],
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [{ name: 'react-vendor', test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/ }],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

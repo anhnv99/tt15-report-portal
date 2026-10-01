@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import {
   Layout,
   Menu,
@@ -13,6 +13,7 @@ import {
   message,
   Tooltip,
   Avatar,
+  Spin,
 } from 'antd';
 import {
   DashboardOutlined,
@@ -297,7 +298,9 @@ export const MainLayout: React.FC = () => {
             minHeight: 280,
           }}
         >
-          <Outlet />
+          <Suspense fallback={<div role="status" aria-label="Đang tải trang" style={{ padding: 48, textAlign: 'center' }}><Spin size="large" /></div>}>
+            <Outlet />
+          </Suspense>
         </Content>
 
         {/* Footer */}
